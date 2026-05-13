@@ -1,35 +1,49 @@
-// GSC OAuth — Phase 1 stub.
-// Generates the Google consent URL; callback handler stores the encrypted
-// refresh token. Real callback wiring lives in /api/gsc/callback (TODO).
-
+import { serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
+import { buildAuthorizeUrl, signState, STATE_TTL_MS } from "../../lib/gsc.js";
 
 export const config = { runtime: "edge" };
-
-const SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST" && req.method !== "GET") {
     return json({ error: { message: "method not allowed" } }, { status: 405 });
   }
-  const clientId = process.env.GSC_CLIENT_ID;
-  const redirect = process.env.GSC_REDIRECT_URI;
-  if (!clientId || !redirect) {
-    return json({ error: { message: "GSC OAuth not configured" } }, { status: 501 });
+
+  const auth = req.headers.get("authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return json({ error: { message: "auth required" } }, { status: 401 });
   }
+  const token = auth.slice("Bearer ".length);
+
   const url = new URL(req.url);
   const projectId = url.searchParams.get("projectId");
-  if (!projectId) return json({ error: { message: "projectId required" } }, { status: 400 });
+  if (!projectId || !/^[0-9a-f-]{36}$/i.test(projectId)) {
+    return json({ error: { message: "projectId required" } }, { status: 400 });
+  }
 
-  const state = projectId; // TODO: sign with HMAC to prevent CSRF
-  const oauth = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  oauth.searchParams.set("client_id", clientId);
-  oauth.searchParams.set("redirect_uri", redirect);
-  oauth.searchParams.set("response_type", "code");
-  oauth.searchParams.set("scope", SCOPE);
-  oauth.searchParams.set("access_type", "offline");
-  oauth.searchParams.set("prompt", "consent");
-  oauth.searchParams.set("state", state);
+  const db = serverClient();
+  const { data: userRes } = await db.auth.getUser(token);
+  const userId = userRes?.user?.id;
+  if (!userId) return json({ error: { message: "invalid token" } }, { status: 401 });
 
-  return json({ authorizeUrl: oauth.toString() });
+  const { data: project } = await db
+    .from("projects")
+    .select("id, user_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!project || project.user_id !== userId) {
+    return json({ error: { message: "forbidden" } }, { status: 403 });
+  }
+
+  try {
+    const state = await signState({
+      projectId,
+      userId,
+      exp: Date.now() + STATE_TTL_MS,
+    });
+    return json({ authorizeUrl: buildAuthorizeUrl(state) });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "config error";
+    return json({ error: { message: msg } }, { status: 501 });
+  }
 }

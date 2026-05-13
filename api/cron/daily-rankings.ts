@@ -1,13 +1,11 @@
 // Daily cron: for each project with GSC connected, fetch positions for each
 // tracked keyword from the GSC Search Analytics API and write to `rankings`.
 // If position changed by >= 3 positions vs the previous row, create a
-// notification.
-//
-// Phase 1: GSC API call is stubbed (returns null). Wire the real call once
-// OAuth callback + token decryption is done.
+// notification. Failures for one keyword/project don't fail the whole job.
 
-import { serverClient } from "../../lib/supabase.js";
+import { decryptToken, serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
+import { fetchGscPosition } from "../../lib/gsc.js";
 
 export const config = { runtime: "edge" };
 
@@ -31,13 +29,34 @@ export default async function handler(req: Request): Promise<Response> {
   let notifications = 0;
 
   for (const project of projects ?? []) {
+    if (!project.gsc_refresh_token_enc || !project.gsc_site_url) continue;
+
+    let refreshToken: string;
+    try {
+      refreshToken = await decryptToken(project.gsc_refresh_token_enc);
+    } catch (err) {
+      console.error("cron: failed to decrypt token for project", project.id, (err as Error).message);
+      continue;
+    }
+
     const { data: kws } = await db
       .from("keywords")
       .select("keyword")
       .eq("project_id", project.id);
 
     for (const { keyword } of kws ?? []) {
-      const position = await fetchGscPosition(project, keyword);
+      let position: number | null = null;
+      try {
+        position = await fetchGscPosition({
+          refreshToken,
+          siteUrl: project.gsc_site_url,
+          keyword,
+        });
+      } catch (err) {
+        // Log without the token. Skip this keyword for today.
+        console.error("cron: gsc fetch failed", project.id, keyword, (err as Error).message);
+        continue;
+      }
       // Always record (null = not in top 100), so the chart has continuity.
       await db.from("rankings").insert({ project_id: project.id, keyword, position });
 
@@ -67,14 +86,3 @@ export default async function handler(req: Request): Promise<Response> {
   return json({ ok: true, processed, notifications });
 }
 
-async function fetchGscPosition(
-  _project: { gsc_site_url: string | null; gsc_refresh_token_enc: string | null },
-  _keyword: string,
-): Promise<number | null> {
-  // TODO Phase 1.5: decrypt refresh token, exchange for access token via
-  // https://oauth2.googleapis.com/token, then POST to
-  // https://searchconsole.googleapis.com/webmasters/v3/sites/{siteUrl}/searchAnalytics/query
-  // with body { startDate, endDate, dimensions: ["query"], rowLimit: 1, dimensionFilterGroups: [{filters:[{dimension:"query",expression:_keyword}]}] }
-  // and return data.rows[0].position (rounded).
-  return null;
-}
