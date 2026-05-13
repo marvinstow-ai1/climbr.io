@@ -21,6 +21,35 @@ export const TrackKeywordInput = z.object({
 });
 export type TrackKeywordInput = z.infer<typeof TrackKeywordInput>;
 
+// Domain — `example.com`, `sub.example.com`, etc. We strip scheme/path/www
+// before validating, so https://www.example.com/foo also passes.
+const DOMAIN_RE = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
+
+export function normalizeDomain(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/.*$/, "");
+}
+
+const Domain = z.string()
+  .min(3)
+  .max(253)
+  .transform((v) => normalizeDomain(v))
+  .refine((v) => DOMAIN_RE.test(v), "must be a valid domain (e.g. example.com)");
+
+export const CreateProjectInput = z.object({
+  domain: Domain,
+  keywords: z
+    .array(z.string().trim().min(1).max(120))
+    .max(20) // Hard ceiling at API edge; per-plan check happens after auth.
+    .optional()
+    .default([]),
+});
+export type CreateProjectInput = z.infer<typeof CreateProjectInput>;
+
 export const MarkNotificationsSeenInput = z.object({
   ids: z.array(z.string().uuid()).min(1).max(100),
 });

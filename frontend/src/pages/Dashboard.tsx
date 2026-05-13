@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { ensureSupabase } from "../lib/supabase";
+import { useSession } from "../lib/useSession";
+import { useToast } from "../components/Toast";
 
 interface Project {
   id: string;
   domain: string;
   gsc_connected: boolean;
   gsc_connected_at: string | null;
+  created_at: string;
 }
 
 const STATUS_COPY: Record<string, { kind: "ok" | "warn" | "err"; text: string }> = {
@@ -22,46 +25,42 @@ const STATUS_COPY: Record<string, { kind: "ok" | "warn" | "err"; text: string }>
 };
 
 export default function Dashboard() {
+  const session = useSession();
+  const toast = useToast();
   const [params, setParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const gscStatus = params.get("gsc");
 
   useEffect(() => {
+    if (session.loading) return;
+    if (!session.token) return;
     void loadProjects();
-  }, []);
+  }, [session.loading, session.token]);
 
   async function loadProjects() {
     try {
       const sb = ensureSupabase();
-      const { data: session } = await sb.auth.getSession();
-      if (!session.session) {
-        setError("Please log in to see your projects.");
-        return;
-      }
       const { data, error } = await sb
         .from("projects")
-        .select("id, domain, gsc_connected, gsc_connected_at")
+        .select("id, domain, gsc_connected, gsc_connected_at, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setProjects(data as Project[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load projects");
+      setLoadError(e instanceof Error ? e.message : "Failed to load projects");
     }
   }
 
   async function connectGsc(projectId: string) {
+    if (!session.token) return;
     setBusyId(projectId);
     try {
-      const sb = ensureSupabase();
-      const { data: session } = await sb.auth.getSession();
-      const token = session.session?.access_token;
-      if (!token) throw new Error("Not logged in");
       const res = await fetch(`/api/gsc/connect?projectId=${projectId}`, {
         method: "POST",
-        headers: { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${session.token}` },
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -70,36 +69,41 @@ export default function Dashboard() {
       const { authorizeUrl } = (await res.json()) as { authorizeUrl: string };
       window.location.href = authorizeUrl;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to start GSC connect");
+      toast.push("error", e instanceof Error ? e.message : "Failed to start GSC connect");
       setBusyId(null);
     }
   }
 
   async function disconnectGsc(projectId: string) {
+    if (!session.token) return;
     setBusyId(projectId);
     try {
-      const sb = ensureSupabase();
-      const { data: session } = await sb.auth.getSession();
-      const token = session.session?.access_token;
-      if (!token) throw new Error("Not logged in");
       const res = await fetch(`/api/gsc/disconnect?projectId=${projectId}`, {
         method: "POST",
-        headers: { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${session.token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.push("info", "GSC disconnected");
       await loadProjects();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to disconnect");
+      toast.push("error", e instanceof Error ? e.message : "Failed to disconnect");
     } finally {
       setBusyId(null);
     }
+  }
+
+  if (!session.loading && !session.token) {
+    return <Navigate to="/login" replace state={{ next: "/dashboard" }} />;
   }
 
   const banner = gscStatus ? STATUS_COPY[gscStatus] : null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <Link to="/projects/new" className="btn-primary">+ New project</Link>
+      </div>
 
       {banner && (
         <div
@@ -108,6 +112,7 @@ export default function Dashboard() {
               : banner.kind === "warn" ? "border-amber-200 bg-amber-50 text-amber-800"
               : "border-red-200 bg-red-50 text-red-800"
           }`}
+          role="status"
         >
           <div className="flex items-center justify-between">
             <span>{banner.text}</span>
@@ -121,25 +126,37 @@ export default function Dashboard() {
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {loadError && <p className="mt-4 text-sm text-red-600" role="alert">{loadError}</p>}
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Projects</h2>
-        {projects.length === 0 ? (
-          <p className="mt-2 text-slate2">
-            No projects yet. Project CRUD UI lands in the next task — for now you
-            can run anonymous audits from the landing page.
-          </p>
+        {session.loading ? (
+          <p className="mt-2 text-slate2">Loading…</p>
+        ) : projects.length === 0 ? (
+          <div className="card mt-4">
+            <p className="text-slate2">
+              No projects yet. Create one to start running audits and tracking rankings.
+            </p>
+            <Link to="/projects/new" className="btn-primary mt-4 inline-block">Create your first project</Link>
+          </div>
         ) : (
           <ul className="mt-4 space-y-3">
             {projects.map((p) => (
               <li key={p.id} className="card flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{p.domain}</p>
+                <div className="min-w-0 flex-1">
+                  <Link to={`/projects/${p.id}`} className="font-medium text-primary hover:underline">
+                    {p.domain}
+                  </Link>
                   <p className="text-sm text-slate2">
-                    {p.gsc_connected
-                      ? `GSC connected${p.gsc_connected_at ? ` ${new Date(p.gsc_connected_at).toLocaleDateString()}` : ""}`
-                      : "GSC not connected"}
+                    {p.gsc_connected ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
+                        GSC connected
+                        {p.gsc_connected_at && (
+                          <span className="text-slate2"> · last sync {new Date(p.gsc_connected_at).toLocaleDateString()}</span>
+                        )}
+                      </span>
+                    ) : "GSC not connected"}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -154,12 +171,13 @@ export default function Dashboard() {
                   ) : (
                     <button
                       onClick={() => connectGsc(p.id)}
-                      className="btn-primary"
+                      className="btn-ghost"
                       disabled={busyId === p.id}
                     >
                       {busyId === p.id ? "Redirecting…" : "Connect GSC"}
                     </button>
                   )}
+                  <Link to={`/projects/${p.id}`} className="btn-primary">Open</Link>
                 </div>
               </li>
             ))}
