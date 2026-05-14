@@ -54,6 +54,43 @@ export const MarkNotificationsSeenInput = z.object({
   ids: z.array(z.string().uuid()).min(1).max(100),
 });
 
+// ---------- Phase 2: DataForSEO-backed inputs ----------
+
+export const KeywordResearchInput = z.object({
+  keyword: z.string().trim().min(1).max(120),
+  locale: z.enum(["en", "de"]).optional().default("de"),
+});
+export type KeywordResearchInput = z.infer<typeof KeywordResearchInput>;
+
+const DomainOnly = z.string()
+  .min(3)
+  .max(253)
+  .transform((v) => normalizeDomain(v))
+  .refine((v) => DOMAIN_RE.test(v), "must be a valid domain (e.g. example.com)");
+
+export const CompetitorAnalysisInput = z.object({
+  domain: DomainOnly,
+  compareDomain: DomainOnly.optional(),
+  locale: z.enum(["en", "de"]).optional().default("de"),
+});
+export type CompetitorAnalysisInput = z.infer<typeof CompetitorAnalysisInput>;
+
+export const NotificationSettingsInput = z.object({
+  rankingThreshold: z.number().int().min(1).max(50).optional(),
+  notificationFrequency: z.enum(["daily", "weekly", "off"]).optional(),
+  emailNotifications: z.boolean().optional(),
+  projectThresholds: z
+    .array(
+      z.object({
+        projectId: z.string().uuid(),
+        threshold: z.number().int().min(1).max(50).nullable(),
+      }),
+    )
+    .max(50)
+    .optional(),
+});
+export type NotificationSettingsInput = z.infer<typeof NotificationSettingsInput>;
+
 export function json(body: unknown, init?: ResponseInit): Response {
   return new Response(JSON.stringify(body), {
     ...init,

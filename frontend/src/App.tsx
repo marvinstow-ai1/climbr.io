@@ -7,6 +7,9 @@ import Signup from "./pages/Signup";
 import Pricing from "./pages/Pricing";
 import ProjectNew from "./pages/ProjectNew";
 import ProjectDetail from "./pages/ProjectDetail";
+import KeywordResearch from "./pages/KeywordResearch";
+import Competitors from "./pages/Competitors";
+import NotificationSettingsPage from "./pages/NotificationSettings";
 import { ToastProvider } from "./components/Toast";
 
 export default function App() {
@@ -20,8 +23,10 @@ export default function App() {
               climbr.io
             </Link>
             <div className="flex items-center gap-3 text-sm">
-              <Link to="/pricing" className="text-slate2 hover:text-ink">Pricing</Link>
+              <Link to="/keywords" className="text-slate2 hover:text-ink">Keywords</Link>
+              <Link to="/competitors" className="text-slate2 hover:text-ink">Competitors</Link>
               <Link to="/dashboard" className="text-slate2 hover:text-ink">Dashboard</Link>
+              <Link to="/pricing" className="text-slate2 hover:text-ink">Pricing</Link>
               <Link to="/login" className="text-slate2 hover:text-ink">Log in</Link>
               <Link to="/signup" className="btn-ghost">Sign up</Link>
             </div>
@@ -38,6 +43,9 @@ export default function App() {
             <Route path="/projects/new" element={<ProjectNew />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
             <Route path="/audit/:id" element={<AuditReport />} />
+            <Route path="/keywords" element={<KeywordResearch />} />
+            <Route path="/competitors" element={<Competitors />} />
+            <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
           </Routes>
         </main>
 

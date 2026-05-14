@@ -7,6 +7,7 @@ import Tabs from "../components/Tabs";
 import AuditsTab from "../components/project/AuditsTab";
 import RankingsTab from "../components/project/RankingsTab";
 import NotificationsTab from "../components/project/NotificationsTab";
+import OverviewTab from "../components/project/OverviewTab";
 
 interface Project {
   id: string;
@@ -104,6 +105,18 @@ export default function ProjectDetail() {
       <div className="mt-8">
         <Tabs
           tabs={[
+            {
+              id: "overview",
+              label: "Overview",
+              content: (
+                <OverviewTab
+                  projectId={id}
+                  token={session.token}
+                  domain={project.domain}
+                  onNotify={(k, m) => toast.push(k, m)}
+                />
+              ),
+            },
             {
               id: "audits",
               label: "Audits",

@@ -19,6 +19,12 @@ const routes: { match: (path: string) => boolean; load: () => Promise<{ default:
   { match: (p) => p === "/api/gsc/connect",    load: () => import("../api/gsc/connect.ts") },
   { match: (p) => p === "/api/gsc/callback",   load: () => import("../api/gsc/callback.ts") },
   { match: (p) => p === "/api/gsc/disconnect", load: () => import("../api/gsc/disconnect.ts") },
+  { match: (p) => p === "/api/keywords/research",      load: () => import("../api/keywords/research.ts") },
+  { match: (p) => p === "/api/competitors/analyze",    load: () => import("../api/competitors/analyze.ts") },
+  { match: (p) => /^\/api\/dashboard\/[^/]+$/.test(p), load: () => import("../api/dashboard/[projectId].ts") },
+  { match: (p) => p === "/api/settings/notifications", load: () => import("../api/settings/notifications.ts") },
+  { match: (p) => p === "/api/cron/daily-rankings",    load: () => import("../api/cron/daily-rankings.ts") },
+  { match: (p) => p === "/api/cron/refresh-dashboards",load: () => import("../api/cron/refresh-dashboards.ts") },
 ];
 
 function nodeToWebRequest(req: IncomingMessage): Request {
