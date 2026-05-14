@@ -1,17 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ensureSupabase } from "../lib/supabase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // If the user is already signed in (or just landed back here from the
+  // magic link, which drops tokens in the URL hash that supabase-js parses
+  // on load), push them straight to the dashboard.
+  useEffect(() => {
+    const sb = ensureSupabase();
+    void sb.auth.getSession().then(({ data }) => {
+      if (data.session) navigate("/dashboard", { replace: true });
+    });
+    const { data: sub } = sb.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        navigate("/dashboard", { replace: true });
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
     try {
       const sb = ensureSupabase();
-      const { error } = await sb.auth.signInWithOtp({ email });
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
       if (error) throw error;
       setSent(true);
     } catch (e) {
