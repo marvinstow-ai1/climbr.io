@@ -8,8 +8,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "node scripts/dev.mjs",
     "dev:frontend-only": "npm --prefix frontend run dev",
+    "dev:api-only": "vercel dev --listen 3000",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

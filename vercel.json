@@ -3,7 +3,6 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
-  "devCommand": "npm --prefix frontend run dev -- --port $PORT --strictPort --host",
   "framework": null,
   "crons": [
     { "path": "/api/cron/daily-rankings", "schedule": "0 3 * * *" },
