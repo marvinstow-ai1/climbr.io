@@ -48,7 +48,7 @@ interface Filter {
   val: unknown;
 }
 
-type Op = "select" | "insert" | "update" | "delete";
+type Op = "select" | "insert" | "update" | "delete" | "upsert";
 
 interface RunResult {
   data: Row[] | null;
@@ -77,7 +77,12 @@ class QueryBuilder implements PromiseLike<RunResult> {
 
   insert(payload: Row | Row[]): this { this.op = "insert"; this.payload = payload; return this; }
   update(payload: Row): this { this.op = "update"; this.payload = payload; return this; }
+  upsert(payload: Row | Row[], opts?: { onConflict?: string; ignoreDuplicates?: boolean }): this {
+    this.op = "upsert"; this.payload = payload; this.upsertOnConflict = opts?.onConflict ?? "id"; return this;
+  }
   delete(_opts?: { count?: string }): this { this.op = "delete"; return this; }
+
+  private upsertOnConflict = "id";
 
   eq(col: string, val: unknown): this  { this.filters.push({ op: "eq",  col, val }); return this; }
   gte(col: string, val: unknown): this { this.filters.push({ op: "gte", col, val }); return this; }
@@ -123,6 +128,24 @@ class QueryBuilder implements PromiseLike<RunResult> {
 
   private async run(): Promise<RunResult> {
     const rows = this.state[this.table];
+
+    if (this.op === "upsert") {
+      const payload = Array.isArray(this.payload) ? this.payload : [this.payload!];
+      const out: Row[] = [];
+      for (const p of payload) {
+        const conflictCol = this.upsertOnConflict;
+        const existingIdx = rows.findIndex((x) => x[conflictCol] === (p as Row)[conflictCol]);
+        if (existingIdx >= 0) {
+          Object.assign(rows[existingIdx]!, p);
+          out.push(rows[existingIdx]!);
+        } else {
+          const row = { id: cryptoUuid(), created_at: new Date().toISOString(), ...p };
+          rows.push(row);
+          out.push(row);
+        }
+      }
+      return { data: out, error: null, count: out.length };
+    }
 
     if (this.op === "insert") {
       const payload = Array.isArray(this.payload) ? this.payload : [this.payload!];
