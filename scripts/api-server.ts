@@ -10,9 +10,15 @@ type Handler = (req: Request) => Promise<Response>;
 // Route table. Keep this short — only register what the manual test plan
 // touches. Add more entries as features come online.
 const routes: { match: (path: string) => boolean; load: () => Promise<{ default: Handler }> }[] = [
-  { match: (p) => p === "/api/health",        load: () => import("../api/health.ts") },
-  { match: (p) => p === "/api/audit/run",     load: () => import("../api/audit/run.ts") },
+  { match: (p) => p === "/api/health",         load: () => import("../api/health.ts") },
+  { match: (p) => p === "/api/audit/run",      load: () => import("../api/audit/run.ts") },
   { match: (p) => /^\/api\/audit\/[^/]+$/.test(p), load: () => import("../api/audit/[id].ts") },
+  { match: (p) => p === "/api/projects",       load: () => import("../api/projects.ts") },
+  { match: (p) => p === "/api/rankings/track", load: () => import("../api/rankings/track.ts") },
+  { match: (p) => p === "/api/notifications",  load: () => import("../api/notifications.ts") },
+  { match: (p) => p === "/api/gsc/connect",    load: () => import("../api/gsc/connect.ts") },
+  { match: (p) => p === "/api/gsc/callback",   load: () => import("../api/gsc/callback.ts") },
+  { match: (p) => p === "/api/gsc/disconnect", load: () => import("../api/gsc/disconnect.ts") },
 ];
 
 function nodeToWebRequest(req: IncomingMessage): Request {

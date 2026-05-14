@@ -8,7 +8,7 @@ import { CreateProjectInput, badRequest, json } from "../lib/validation.js";
 import { requireAuth } from "../lib/auth.js";
 import { limitsFor, planLimitError } from "../lib/plans.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 export default async function handler(req: Request): Promise<Response> {
   const db = serverClient();
