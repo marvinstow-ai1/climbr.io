@@ -100,17 +100,21 @@ supabase db push
 ### 5. Run
 
 ```sh
-npm run dev           # vercel dev — frontend + /api/* on http://localhost:3000
+npm run dev           # Vite frontend on http://localhost:5173 (or 5174)
 ```
 
-`vercel.json` sets `devCommand` so `vercel dev` starts Vite as its
-sub-process and serves `/api/*` itself. **One terminal, one URL.**
+In Codespaces this is forwarded automatically — Vite is configured for
+the tunnel (`server.host: true`, `allowedHosts: true`, HMR over wss/443
+when `CODESPACES=true`).
 
-You can still run frontend-only without the backend:
+Need the full stack with `/api/*` working locally?
 
 ```sh
-npm run dev --prefix frontend       # http://localhost:5173, proxies /api → :3000
+npm run dev:vercel    # vercel dev — frontend + /api/* on :3000
 ```
+
+`vercel.json` sets `devCommand` so `vercel dev` boots Vite as its
+sub-process and routes `/api/*` itself. One URL, one port.
 
 ### 6. Seed + log in (manual QA)
 
