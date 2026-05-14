@@ -1,0 +1,44 @@
+{
+  "auditId": "00000000-0000-0000-0000-00000000a001",
+  "status": "complete",
+  "score": 78,
+  "preview": {
+    "summary": "Audit complete (mock). Score 78/100. 3 high-impact fixes identified.",
+    "topFixes": [
+      {
+        "priority": "high",
+        "impact": "high",
+        "title": "Add meta description",
+        "why": "Drives click-through rate from search results.",
+        "steps": [
+          "Open your homepage template.",
+          "Add a <meta name=\"description\" content=\"...\"> of 140-160 characters."
+        ],
+        "example": "Example: \"Discover handcrafted leather backpacks — free EU shipping on orders over €60.\"",
+        "estimatedMinutes": 10
+      },
+      {
+        "priority": "high",
+        "impact": "medium",
+        "title": "Optimize images",
+        "why": "Large images slow LCP and hurt mobile rankings.",
+        "steps": [
+          "Compress images >200KB with mozjpeg or webp.",
+          "Add explicit width/height attributes."
+        ],
+        "estimatedMinutes": 30
+      },
+      {
+        "priority": "high",
+        "impact": "medium",
+        "title": "Add H1 on homepage",
+        "why": "Helps search engines and users understand the page topic.",
+        "steps": [
+          "Add exactly one <h1> above the main content.",
+          "Include the primary keyword naturally."
+        ],
+        "estimatedMinutes": 5
+      }
+    ]
+  }
+}
