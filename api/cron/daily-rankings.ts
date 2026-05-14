@@ -7,7 +7,7 @@ import { decryptToken, serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
 import { fetchGscPosition } from "../../lib/gsc.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 const POSITION_DELTA = 3;
 

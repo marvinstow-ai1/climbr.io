@@ -1,7 +1,7 @@
 import { serverClient } from "../../lib/supabase.js";
 import { TrackKeywordInput, badRequest, json, tooMany } from "../../lib/validation.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 const FREE_LIMIT = Number(process.env.FREE_TRACKED_KEYWORDS ?? "5");
 

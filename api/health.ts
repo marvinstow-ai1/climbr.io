@@ -1,7 +1,7 @@
 import { serverClient } from "../lib/supabase.js";
 import { json } from "../lib/validation.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 export default async function handler(): Promise<Response> {
   const checks: Record<string, unknown> = {

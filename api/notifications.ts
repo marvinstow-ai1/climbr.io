@@ -1,7 +1,7 @@
 import { serverClient } from "../lib/supabase.js";
 import { MarkNotificationsSeenInput, badRequest, json } from "../lib/validation.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 export default async function handler(req: Request): Promise<Response> {
   const auth = req.headers.get("authorization");

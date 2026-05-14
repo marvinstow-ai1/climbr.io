@@ -5,7 +5,7 @@
 import { decryptToken, serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: { message: "method not allowed" } }, { status: 405 });

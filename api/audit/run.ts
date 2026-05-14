@@ -4,7 +4,7 @@ import { serverClient } from "../../lib/supabase.js";
 import { RunAuditInput, badRequest, json, serverError, tooMany } from "../../lib/validation.js";
 import { clientIp, isOverAnonLimit, logAnonAttempt } from "../../lib/ratelimit.js";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 export default async function handler(req: Request): Promise<Response> {
   try {
