@@ -3,6 +3,7 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
+  "devCommand": "node -e \"require('http').createServer((q,r)=>{r.statusCode=204;r.end()}).listen(process.env.PORT)\"",
   "framework": null,
   "crons": [
     { "path": "/api/cron/daily-rankings", "schedule": "0 3 * * *" },
