@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vite frontend",
+    "dev": "npm --prefix frontend run dev",
     "dev:vercel": "vercel dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
