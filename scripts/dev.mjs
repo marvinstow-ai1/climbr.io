@@ -19,12 +19,14 @@ import { dirname, resolve } from "node:path";
 loadDotEnv(resolve(dirname(fileURLToPath(import.meta.url)), "..", ".env.local"));
 
 function loadDotEnv(path) {
+  console.log(`\x1b[33m[dev]\x1b[0m dev runner v3 starting at cwd=${process.cwd()}`);
   if (!existsSync(path)) {
-    console.warn(`\x1b[31m[dev]\x1b[0m ${path} not found — API will likely fail with "missing env".`);
+    console.warn(`\x1b[31m[dev]\x1b[0m ${path} NOT FOUND — API will fail with "missing env".`);
     return;
   }
   const raw = readFileSync(path, "utf8");
   let loaded = 0;
+  const seenKeys = [];
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
@@ -35,12 +37,19 @@ function loadDotEnv(path) {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
-    if (process.env[key] === undefined) {
-      process.env[key] = val;
-      loaded++;
-    }
+    // Force-override so vercel dev's cloud values can't blank us out.
+    process.env[key] = val;
+    loaded++;
+    seenKeys.push(key);
   }
   console.log(`\x1b[33m[dev]\x1b[0m loaded ${loaded} vars from ${path}`);
+  console.log(`\x1b[33m[dev]\x1b[0m keys: ${seenKeys.join(", ")}`);
+  const url = process.env.SUPABASE_URL ?? "";
+  const sr = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  console.log(
+    `\x1b[33m[dev]\x1b[0m SUPABASE_URL=${url ? url.slice(0, 30) + "…" : "<EMPTY>"}  ` +
+    `SERVICE_ROLE_KEY=${sr ? "<set, " + sr.length + " chars>" : "<EMPTY>"}`,
+  );
 }
 
 const children = [];
