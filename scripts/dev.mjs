@@ -96,5 +96,9 @@ process.on("SIGTERM", () => shutdown(0));
 console.log("\x1b[33m[dev]\x1b[0m starting Vite (frontend) + custom api server (on :3000)");
 console.log("\x1b[33m[dev]\x1b[0m OPEN THE VITE URL — the one on :5173 (or its Codespaces forward), NOT :3000.\n");
 
-start("api ", "npx", ["tsx", "scripts/api-server.ts"], "36");
+// `tsx watch` so editing api/*.ts or scripts/api-server.ts auto-restarts —
+// a plain `tsx` run pins the route table to whatever was on disk at boot,
+// which is what bit us when /api/projects was 404'ing despite the fix
+// already being on disk: the still-running process had the pre-fix routes.
+start("api ", "npx", ["tsx", "watch", "scripts/api-server.ts"], "36");
 start("vite", "npm", ["--prefix", "frontend", "run", "dev"], "35");

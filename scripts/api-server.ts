@@ -63,15 +63,36 @@ async function writeWebResponse(response: Response, res: ServerResponse): Promis
 
 const PORT = Number(process.env.API_PORT ?? "3000");
 
+// Single source of truth for the matcher pattern shown at startup — so users
+// can grep the boot log to verify a given path is wired up before going to
+// hunt down a 404 in the network panel.
+const ROUTE_PATTERNS = [
+  "/api/health",
+  "/api/audit/run",
+  "/api/audit/[id]",
+  "/api/projects",
+  "/api/rankings/track",
+  "/api/notifications",
+  "/api/gsc/connect",
+  "/api/gsc/callback",
+  "/api/gsc/disconnect",
+];
+
 const server = createServer(async (req, res) => {
-  const path = (req.url ?? "/").split("?")[0]!;
+  const rawPath = req.url ?? "/";
+  // Strip trailing slash (except for root) so /api/projects/ matches the
+  // /api/projects route. Vite's proxy normally preserves the path verbatim,
+  // but a stray slash from a hand-typed URL shouldn't 404.
+  const path = rawPath.split("?")[0]!.replace(/(.)\/$/, "$1");
   const route = routes.find((r) => r.match(path));
   if (!route) {
+    console.warn(`[api-server] 404 ${req.method} ${path} — no route. Known: ${ROUTE_PATTERNS.join(", ")}`);
     res.statusCode = 404;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ error: { message: `no route for ${path}` } }));
     return;
   }
+  console.log(`[api-server] ${req.method} ${path}`);
   try {
     const mod = await route.load();
     const handler = mod.default;
@@ -91,4 +112,5 @@ server.listen(PORT, () => {
   console.log(`[api-server] listening on http://localhost:${PORT}`);
   console.log(`[api-server] SUPABASE_URL=${process.env.SUPABASE_URL ? "set" : "MISSING"}`);
   console.log(`[api-server] SUPABASE_SERVICE_ROLE_KEY=${process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "MISSING"}`);
+  console.log(`[api-server] routes: ${ROUTE_PATTERNS.join(", ")}`);
 });
