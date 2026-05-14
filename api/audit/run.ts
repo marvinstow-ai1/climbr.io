@@ -3,6 +3,7 @@ import { analyze } from "../../lib/ai.js";
 import { serverClient } from "../../lib/supabase.js";
 import { RunAuditInput, badRequest, json, serverError, tooMany } from "../../lib/validation.js";
 import { clientIp, isOverAnonLimit, logAnonAttempt } from "../../lib/ratelimit.js";
+import { limitsFor, normalizePlan, planLimitError } from "../../lib/plans.js";
 
 export const config = { runtime: "nodejs", maxDuration: 60 };
 
@@ -60,6 +61,46 @@ async function run(req: Request): Promise<Response> {
       return tooMany("Too many anonymous audits from this IP. Please sign up to continue.");
     }
     await logAnonAttempt(db, ip, url);
+  }
+
+  // Authenticated path: if the caller bound this audit to a project, the
+  // caller must own that project AND be within their monthly audit limit.
+  if (projectId) {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: { code: "AUTH_REQUIRED", message: "auth required to run audit on a project" } }, { status: 401 });
+    }
+    const { data: userRes } = await db.auth.getUser(authHeader.slice("Bearer ".length));
+    const userId = userRes?.user?.id;
+    if (!userId) return json({ error: { code: "INVALID_TOKEN", message: "invalid token" } }, { status: 401 });
+
+    const { data: project } = await db
+      .from("projects")
+      .select("id, user_id")
+      .eq("id", projectId)
+      .maybeSingle();
+    if (!project || project.user_id !== userId) {
+      return json({ error: { message: "forbidden" } }, { status: 403 });
+    }
+
+    const { data: profile } = await db.from("users").select("plan").eq("id", userId).maybeSingle();
+    const plan = normalizePlan(profile?.plan);
+    const limit = limitsFor(plan).auditsPerMonth;
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const { count } = await db
+      .from("audits")
+      .select("id", { head: true, count: "exact" })
+      .gte("created_at", monthStart.toISOString())
+      .in(
+        "project_id",
+        (await db.from("projects").select("id").eq("user_id", userId)).data?.map((r) => r.id) ?? [projectId],
+      );
+    const current = count ?? 0;
+    if (current >= limit) {
+      return json(planLimitError({ resource: "audits", plan, current, limit }), { status: 402 });
+    }
   }
 
   // Create the audit row up front so the client can poll if we want async later.
