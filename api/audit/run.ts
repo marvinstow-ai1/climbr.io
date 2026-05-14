@@ -7,6 +7,16 @@ import { clientIp, isOverAnonLimit, logAnonAttempt } from "../../lib/ratelimit.j
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request): Promise<Response> {
+  try {
+    return await run(req);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("audit/run unhandled error", err);
+    return serverError(`audit/run crashed: ${message}`);
+  }
+}
+
+async function run(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: { message: "method not allowed" } }, { status: 405 });
 
   let body: unknown;
@@ -22,7 +32,14 @@ export default async function handler(req: Request): Promise<Response> {
   }
   const { url, email, projectId, locale } = parsed.data;
 
-  const db = serverClient();
+  let db;
+  try {
+    db = serverClient();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("audit/run: serverClient init failed", message);
+    return serverError(`server misconfigured: ${message}`);
+  }
   const ip = clientIp(req);
 
   // Anonymous requests (no projectId AND no email yet) are IP-rate-limited.
@@ -48,7 +65,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (createErr || !created) {
     console.error("audit insert failed", createErr);
-    return serverError("could not create audit");
+    return serverError(`could not create audit: ${createErr?.message ?? "unknown DB error"}`);
   }
   const auditId = created.id as string;
 
