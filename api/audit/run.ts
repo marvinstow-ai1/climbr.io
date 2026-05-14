@@ -4,7 +4,19 @@ import { serverClient } from "../../lib/supabase.js";
 import { RunAuditInput, badRequest, json, serverError, tooMany } from "../../lib/validation.js";
 import { clientIp, isOverAnonLimit, logAnonAttempt } from "../../lib/ratelimit.js";
 
-export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs", maxDuration: 60 };
+
+// Hard ceiling on the crawl step in case fetch's abort signal doesn't
+// unstick a hung connection under the local dev runtime.
+const CRAWL_HARD_TIMEOUT_MS = 20_000;
+
+function withHardTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${label} exceeded ${ms}ms hard timeout`)), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); },
+           (e) => { clearTimeout(t); reject(e); });
+  });
+}
 
 export default async function handler(req: Request): Promise<Response> {
   try {
@@ -70,7 +82,7 @@ async function run(req: Request): Promise<Response> {
   const auditId = created.id as string;
 
   try {
-    const crawl = await crawlUrl(url);
+    const crawl = await withHardTimeout(crawlUrl(url), CRAWL_HARD_TIMEOUT_MS, "crawl");
 
     await db.from("audits").update({
       status: "analyzing",
