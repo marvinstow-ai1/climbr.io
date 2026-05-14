@@ -58,26 +58,52 @@ After a run, the HTML report is at `playwright-report/index.html` and
 screenshots at `playwright-report/screenshots/*.png`. Useful for the demo
 recording — the four PNGs cover the full create→audit→rankings loop.
 
-### CI
+### CI workflows
 
-`.github/workflows/playwright-demo.yml` runs on every PR. Steps:
+Two workflows, separate triggers:
 
-1. Install root + frontend deps, install Chromium.
-2. **Optional**: if `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
-   are all set as repository secrets, deploy a Vercel preview and use
-   that as `PREVIEW_URL`. Otherwise fall back to the local `vite preview`
-   path (no secrets required).
-3. Run `npx playwright test tests/smoke.spec.ts --project=chromium`.
-4. Upload two artifacts on every run (pass or fail):
-   - `playwright-report` — full HTML report (open `index.html`).
-   - `smoke-screenshots` — just the four PNG screenshots for quick preview.
+| File                                       | Trigger              | Purpose                                                                 |
+| ------------------------------------------ | -------------------- | ----------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`                 | every push           | Backend `tsc --noEmit` + `vitest run` + frontend build. ~30 s.          |
+| `.github/workflows/preview-deploy.yml`     | `pull_request`       | Full pipeline: tests → build → Vercel preview deploy → smoke → PR comment. |
+| `.github/workflows/playwright-demo.yml`    | `workflow_dispatch`  | Ad-hoc smoke against an arbitrary URL (staging, prod).                  |
 
-Use the **workflow_dispatch** trigger to point the smoke at any URL
-manually (e.g. for production sanity-checks):
+**`preview-deploy.yml`** is the headline PR workflow. Steps:
 
+1. Install root + frontend deps.
+2. Backend typecheck + vitest.
+3. Frontend build.
+4. **Optional** Vercel preview deploy — skipped when secrets aren't set.
+5. Playwright smoke against a **local** `vite preview` (always, regardless
+   of the Vercel step — see "Why local-only" below).
+6. Upload `playwright-report/` + `smoke-screenshots/` artifacts.
+7. Post (or update) one PR comment with the preview URL + artifact links.
+
+**Why the smoke runs against the local preview, not the Vercel one**
+
+The smoke depends on:
+- A fake Supabase session injected into `localStorage` under the key
+  `sb-localhost-auth-token`. Real Vercel previews would derive a
+  different key from the project's actual `VITE_SUPABASE_URL`.
+- `page.route` interception of `/rest/v1/*` and the app's `/api/*`. A
+  real preview makes these requests to a real backend; intercepting them
+  defeats the point of deploying.
+
+So: the smoke verifies **frontend ↔ frontend-API contract** in isolation.
+The Vercel preview URL is for **humans** to click through manually.
+
+If you need an automated smoke against a real backend, that's a separate
+Phase-2 work item (test-mode auth bypass + real Supabase test project).
+
+**Manual smoke against a specific URL**
+
+```sh
+gh workflow run "Playwright Smoke (manual)" -f preview_url=https://staging.climbr.io
 ```
-gh workflow run "Playwright Smoke + Demo Recording" -f preview_url=https://staging.climbr.io
-```
+
+Pointed at a non-local URL, the smoke will still inject the fake session
+and intercept routes — useful only if the target uses the same Supabase
+URL prefix as the local build.
 
 ### Required secrets (optional path only)
 

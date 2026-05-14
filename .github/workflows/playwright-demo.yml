@@ -1,13 +1,19 @@
-name: Playwright Smoke + Demo Recording
+name: Playwright Smoke (manual)
+
+# Manual smoke runner. The PR-time workflow lives in preview-deploy.yml;
+# this one stays around for ad-hoc runs against an arbitrary URL, e.g.
+# production sanity-checks or a long-lived staging environment.
+#
+#   gh workflow run "Playwright Smoke (manual)" \
+#     -f preview_url=https://staging.climbr.io
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       preview_url:
-        description: "Override target URL (skip Vercel deploy + local server)"
+        description: "Target URL (leave blank to spin up local preview)"
         required: false
+        default: ""
 
 # Cancel an in-progress run when a new commit is pushed to the same PR.
 concurrency:
