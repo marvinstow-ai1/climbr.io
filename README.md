@@ -100,21 +100,36 @@ supabase db push
 ### 5. Run
 
 ```sh
-# Terminal 1 — frontend
-npm run dev --prefix frontend       # http://localhost:5173
-
-# Terminal 2 — edge functions
-vercel dev                          # http://localhost:3000 — proxies /api/*
+npm run dev           # vercel dev — frontend + /api/* on http://localhost:3000
 ```
 
-The frontend's Vite dev server proxies `/api/*` to `vercel dev` (see
-`frontend/vite.config.ts`).
+`vercel.json` sets `devCommand` so `vercel dev` starts Vite as its
+sub-process and serves `/api/*` itself. **One terminal, one URL.**
 
-### 6. Seed + smoke test
+You can still run frontend-only without the backend:
 
 ```sh
-npm run seed                        # creates demo user + sample audit
-npm test                            # vitest
+npm run dev --prefix frontend       # http://localhost:5173, proxies /api → :3000
+```
+
+### 6. Seed + log in (manual QA)
+
+```sh
+npm run seed           # creates demo user + sample audit, prints a magic-link URL
+```
+
+Copy the URL the seed prints — it logs you in as `demo@climbr.io` without
+needing SMTP. For any other email:
+
+```sh
+npm run magic-link -- you@example.com
+```
+
+The script creates the user on first run and prints a one-click sign-in
+URL. Open it in the same browser you'll do the QA in.
+
+```sh
+npm test                            # vitest unit tests
 ```
 
 ## Flipping from mock AI → real OpenAI
