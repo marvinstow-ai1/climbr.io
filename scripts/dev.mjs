@@ -7,6 +7,41 @@
 // host for that port) in the browser — NOT the :3000 URL.
 
 import { spawn } from "node:child_process";
+import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+// Load .env.local into process.env BEFORE spawning children so both vite
+// and vercel dev inherit the values. We do this explicitly because
+// `vercel dev` against a linked Vercel project can override the local
+// .env.local with empty cloud values, which breaks the edge function
+// runtime (e.g. serverClient() throws "SUPABASE_URL missing").
+loadDotEnv(resolve(dirname(fileURLToPath(import.meta.url)), "..", ".env.local"));
+
+function loadDotEnv(path) {
+  if (!existsSync(path)) {
+    console.warn(`\x1b[31m[dev]\x1b[0m ${path} not found — API will likely fail with "missing env".`);
+    return;
+  }
+  const raw = readFileSync(path, "utf8");
+  let loaded = 0;
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[key] === undefined) {
+      process.env[key] = val;
+      loaded++;
+    }
+  }
+  console.log(`\x1b[33m[dev]\x1b[0m loaded ${loaded} vars from ${path}`);
+}
 
 const children = [];
 
