@@ -1,7 +1,11 @@
 // Seed: creates a demo user, a project, and a sample audit (with mocked AI).
-// Run: `npm run seed`. Requires SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in .env.
+// Run: `npm run seed`. Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY from
+// .env.local (auto-loaded). At the end, prints a one-click magic-link URL so
+// you can sign in as the demo user without SMTP.
 //
 // Idempotent: re-runs delete the previous demo rows before inserting fresh ones.
+
+try { process.loadEnvFile?.(".env.local"); } catch { /* file missing — that's fine */ }
 
 import { serverClient } from "../lib/supabase.js";
 import { crawlUrl } from "../lib/crawl.js";
@@ -62,7 +66,18 @@ async function main() {
     { project_id: project.id, keyword: "handmade wallet" },
   ]);
 
-  console.log("\nSeed complete. Visit /audit/" + audit.id + "?email=" + DEMO_EMAIL + " to view.");
+  // 5) Generate a magic-link URL so the user can sign in without SMTP.
+  const { data: link } = await db.auth.admin.generateLink({
+    type: "magiclink",
+    email: DEMO_EMAIL,
+  });
+
+  console.log("\nSeed complete.");
+  console.log("Anonymous audit view: /audit/" + audit.id + "?email=" + DEMO_EMAIL);
+  if (link.properties?.action_link) {
+    console.log("\nSign in as " + DEMO_EMAIL + ":");
+    console.log(link.properties.action_link);
+  }
 }
 
 main().catch((e) => {

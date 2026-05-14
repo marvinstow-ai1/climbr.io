@@ -8,12 +8,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "npm --prefix frontend run dev",
+    "dev:vercel": "vercel dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx scripts/seed.ts",
+    "magic-link": "tsx scripts/get-magic-link.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
