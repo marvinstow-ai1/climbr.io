@@ -52,7 +52,7 @@ export interface FetchOptions {
 
 export async function crawlUrl(rawUrl: string, opts: FetchOptions = {}): Promise<CrawlResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const timeoutMs = opts.timeoutMs ?? 15_000;
+  const timeoutMs = opts.timeoutMs ?? 10_000;
 
   const url = normalizeUrl(rawUrl);
   const start = Date.now();
@@ -80,7 +80,7 @@ export async function crawlUrl(rawUrl: string, opts: FetchOptions = {}): Promise
   const origin = new URL(finalUrl).origin;
   const { internalLinks, externalLinks } = splitLinks(parsed.links, origin);
 
-  const robotsTxt = await tryFetch(`${origin}/robots.txt`, fetchImpl, 5000);
+  const robotsTxt = await tryFetch(`${origin}/robots.txt`, fetchImpl, 3000);
   const sitemapUrl = extractSitemapFromRobots(robotsTxt) ?? `${origin}/sitemap.xml`;
 
   return {

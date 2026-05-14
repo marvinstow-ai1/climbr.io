@@ -24,12 +24,14 @@ export default defineConfig({
       ? { clientPort: 443, protocol: "wss" }
       : undefined,
     proxy: {
-      // Used only when running Vite standalone (`npm run dev`). Under
-      // `vercel dev` (`npm run dev:vercel`) the Vercel router handles
-      // /api/* and this proxy is bypassed.
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
+        // Audits can take ~15s (page crawl + robots fetch). Default
+        // http-proxy timeouts are short enough to cut off the response
+        // and leave the browser with a 504 — bump both legs to 60s.
+        timeout: 60_000,
+        proxyTimeout: 60_000,
       },
     },
   },
