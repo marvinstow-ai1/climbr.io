@@ -1,22 +1,28 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { getAudit, type FullAudit } from "../lib/api";
+import { useSession } from "../lib/useSession";
 import FixCard from "../components/FixCard";
 
 export default function AuditReport() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const email = params.get("email") ?? undefined;
+  const session = useSession();
 
   const [audit, setAudit] = useState<FullAudit | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    getAudit(id, { email })
+    // Wait for the session probe to finish before firing — otherwise the
+    // first call goes out tokenless and a project-bound audit 401s before
+    // the auth state lands.
+    if (session.loading) return;
+    getAudit(id, { email, token: session.token ?? undefined })
       .then(setAudit)
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"));
-  }, [id, email]);
+  }, [id, email, session.loading, session.token]);
 
   if (error) {
     return (
