@@ -8,8 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "dev:vercel": "vercel dev",
+    "dev": "vercel dev",
+    "dev:frontend-only": "npm --prefix frontend run dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
