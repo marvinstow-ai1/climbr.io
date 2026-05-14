@@ -93,8 +93,8 @@ function shutdown(code) {
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
-console.log("\x1b[33m[dev]\x1b[0m starting Vite (frontend) + Vercel (api on :3000)");
+console.log("\x1b[33m[dev]\x1b[0m starting Vite (frontend) + custom api server (on :3000)");
 console.log("\x1b[33m[dev]\x1b[0m OPEN THE VITE URL — the one on :5173 (or its Codespaces forward), NOT :3000.\n");
 
-start("api ", "npx", ["vercel", "dev", "--listen", "3000", "--yes"], "36");
+start("api ", "npx", ["tsx", "scripts/api-server.ts"], "36");
 start("vite", "npm", ["--prefix", "frontend", "run", "dev"], "35");
