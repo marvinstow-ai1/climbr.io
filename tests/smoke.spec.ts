@@ -303,5 +303,33 @@ test.describe("climbr.io smoke", () => {
     expect(await sparklines.count()).toBeGreaterThanOrEqual(TEST_KEYWORDS.length);
 
     await screenshot(page, "rankings-tab.png");
+
+    // (g) Dashboard shell (Phase 4 Bereich 1): nav, sidebar, overview cards,
+    // and the project we just created appears in the table.
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("dashboard-page")).toBeVisible();
+    await expect(page.getByTestId("overview-cards")).toBeVisible();
+    await expect(page.getByTestId("latest-audit-score")).toContainText(`${openaiMock.score}`);
+    await expect(page.getByTestId("project-table")).toBeVisible();
+    await expect(page.getByTestId("project-table").getByText(TEST_DOMAIN)).toBeVisible();
+    // The sidebar links to the same project.
+    await expect(page.getByTestId("sidebar").getByRole("link", { name: TEST_DOMAIN })).toBeVisible();
+
+    await screenshot(page, "dashboard-redesigned.png");
+  });
+
+  test("dashboard empty state when user has no projects", async ({ page }) => {
+    const state = freshState();
+    await injectSession(page);
+    await setupMocks(page, state);
+
+    page.on("pageerror", (err) => console.log("[browser:pageerror]", err.message));
+
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("dashboard-page")).toBeVisible();
+    await expect(page.getByTestId("empty-dashboard")).toBeVisible();
+    await expect(page.getByRole("link", { name: /erstes projekt anlegen/i })).toBeVisible();
+
+    await screenshot(page, "dashboard-empty.png");
   });
 });
