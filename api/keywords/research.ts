@@ -4,6 +4,8 @@
 import { serverClient } from "../../lib/supabase.js";
 import { KeywordResearchInput, badRequest, json } from "../../lib/validation.js";
 import { requireAuth } from "../../lib/auth.js";
+import { limitsFor, monthlyCount, planLimitError } from "../../lib/plans.js";
+import { isOverHourlyLimit } from "../../lib/ratelimit.js";
 import {
   fetchKeywordMetrics,
   fetchRelatedKeywords,
@@ -14,6 +16,7 @@ import {
 export const config = { runtime: "nodejs" };
 
 const CACHE_TTL_SECONDS = 60 * 60 * 24; // 24h
+const HOURLY_LIMIT_PER_USER = 30;
 
 export default async function handler(req: Request): Promise<Response> {
   const db = serverClient();
@@ -53,6 +56,22 @@ export default async function handler(req: Request): Promise<Response> {
   const parsed = KeywordResearchInput.safeParse(body);
   if (!parsed.success) return badRequest("invalid input", parsed.error.flatten());
   const { keyword, locale } = parsed.data;
+
+  const monthlyLimit = limitsFor(ctx.plan).keywordResearchPerMonth;
+  const monthlyUsed = await monthlyCount(db as never, "keyword_research", ctx.userId);
+  if (monthlyUsed >= monthlyLimit) {
+    return json(
+      planLimitError({ resource: "keyword_research", plan: ctx.plan, current: monthlyUsed, limit: monthlyLimit }),
+      { status: 402 },
+    );
+  }
+  const hourly = await isOverHourlyLimit(db, "keyword_research", ctx.userId, HOURLY_LIMIT_PER_USER);
+  if (hourly.over) {
+    return json(
+      { error: { code: "RATE_LIMITED", message: `Too many requests — wait a few minutes (max ${HOURLY_LIMIT_PER_USER}/hour).` } },
+      { status: 429 },
+    );
+  }
 
   try {
     const [metrics, related, serp] = await Promise.all([

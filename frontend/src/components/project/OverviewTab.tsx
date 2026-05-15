@@ -30,7 +30,14 @@ export default function OverviewTab({ projectId, token, domain, onNotify }: Prop
       const { snapshot, cached } = await getDashboardSnapshot(token, projectId, { refresh: force });
       setSnapshot(snapshot);
       setCached(cached);
-      if (force) onNotify("success", "Dashboard aktualisiert");
+      if (force) {
+        onNotify("success", "Dashboard aktualisiert");
+      } else if (cached) {
+        const ageH = Math.round((Date.now() - new Date(snapshot.refreshed_at).getTime()) / (60 * 60 * 1000));
+        if (ageH > 6) {
+          onNotify("info", `Daten von vor ${ageH}h — drücke Refresh für aktuelle Zahlen.`);
+        }
+      }
     } catch (e) {
       onNotify("error", e instanceof Error ? e.message : "Konnte Dashboard nicht laden");
     } finally {

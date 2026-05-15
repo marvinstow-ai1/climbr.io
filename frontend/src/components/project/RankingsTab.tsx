@@ -6,6 +6,7 @@ import {
   type ApiError,
 } from "../../lib/api";
 import Sparkline from "../Sparkline";
+import KeywordHistoryModal from "./KeywordHistoryModal";
 import type { ToastKind } from "../Toast";
 
 interface KeywordRow {
@@ -37,6 +38,7 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
   const [newKw, setNewKw] = useState("");
   const [busy, setBusy] = useState(false);
   const [planLimit, setPlanLimit] = useState<PlanLimitState | null>(null);
+  const [historyKeyword, setHistoryKeyword] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -198,7 +200,15 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
             return (
               <li key={row.id} className="flex items-center gap-4 p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">{row.keyword}</p>
+                  <button
+                    type="button"
+                    className="text-left font-medium break-words hover:text-primary hover:underline"
+                    onClick={() => setHistoryKeyword(row.keyword)}
+                    aria-label={`Historie für ${row.keyword} anzeigen`}
+                    disabled={row.id.startsWith("temp-")}
+                  >
+                    {row.keyword}
+                  </button>
                   <p className="text-xs text-slate2">
                     {row.latest != null ? `Position #${row.latest}` : "No data yet"}
                     {delta != null && delta !== 0 && (
@@ -221,6 +231,14 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
             );
           })}
         </ul>
+      )}
+
+      {historyKeyword && (
+        <KeywordHistoryModal
+          projectId={projectId}
+          keyword={historyKeyword}
+          onClose={() => setHistoryKeyword(null)}
+        />
       )}
     </div>
   );

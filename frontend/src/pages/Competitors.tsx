@@ -5,10 +5,12 @@ import { useToast } from "../components/Toast";
 import {
   runCompetitorAnalysis,
   listCompetitorAnalysis,
+  type ApiError,
   type CompetitorAnalysisResponse,
   type CompetitorAnalysisSummary,
   type DomainSnapshot,
 } from "../lib/api";
+import { csvCell, triggerCsvDownload } from "../lib/csv";
 
 function fmtNumber(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -24,6 +26,7 @@ export default function Competitors() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<CompetitorAnalysisResponse | null>(null);
   const [history, setHistory] = useState<CompetitorAnalysisSummary[]>([]);
+  const [planLimit, setPlanLimit] = useState<{ limit: number; plan: string; message: string } | null>(null);
 
   useEffect(() => {
     if (session.loading || !session.token) return;
@@ -44,6 +47,7 @@ export default function Competitors() {
     if (!session.token) return;
     setBusy(true);
     setResult(null);
+    setPlanLimit(null);
     try {
       const data = await runCompetitorAnalysis(session.token, {
         domain: domain.trim(),
@@ -54,10 +58,40 @@ export default function Competitors() {
       toast.push("success", `Analyse abgeschlossen für ${data.primary.domain}`);
       void loadHistory(session.token);
     } catch (e) {
-      toast.push("error", e instanceof Error ? e.message : "Analyse fehlgeschlagen");
+      const apiErr = e as ApiError;
+      if (apiErr.code === "PLAN_LIMIT_REACHED") {
+        const body = apiErr.body as { error: { limit: number; plan: string; message: string } };
+        setPlanLimit({ limit: body.error.limit, plan: body.error.plan, message: body.error.message });
+      } else if (apiErr.code === "RATE_LIMITED") {
+        toast.push("error", apiErr.message);
+      } else {
+        toast.push("error", e instanceof Error ? e.message : "Analyse fehlgeschlagen");
+      }
     } finally {
       setBusy(false);
     }
+  }
+
+  function downloadCsv() {
+    if (!result) return;
+    const rows: string[][] = [["domain", "keyword", "position", "search_volume", "traffic", "url"]];
+    const push = (snap: DomainSnapshot) => {
+      for (const k of snap.keywords) {
+        rows.push([
+          snap.domain,
+          k.keyword,
+          k.position.toString(),
+          k.search_volume?.toString() ?? "",
+          k.traffic?.toString() ?? "",
+          k.url ?? "",
+        ]);
+      }
+    };
+    push(result.primary);
+    if (result.compare) push(result.compare);
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+    const name = `competitors-${result.primary.domain}${result.compare ? `-vs-${result.compare.domain}` : ""}.csv`;
+    triggerCsvDownload(csv, name);
   }
 
   if (!session.loading && !session.token) {
@@ -122,6 +156,15 @@ export default function Competitors() {
         </div>
       </form>
 
+      {planLimit && (
+        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm" role="alert">
+          <p className="font-medium text-amber-800">{planLimit.message}</p>
+          <p className="mt-1 text-amber-700">
+            <a href="/pricing" className="font-medium underline">Upgrade deinen Plan</a> für mehr Wettbewerber-Analysen.
+          </p>
+        </div>
+      )}
+
       {busy && (
         <p className="mt-6 text-slate2" role="status">
           Hole Daten von DataForSEO… (Backlinks-Abfragen können bis zu 30s dauern)
@@ -129,7 +172,13 @@ export default function Competitors() {
       )}
 
       {result && (
-        <section className="mt-8 grid gap-8 md:grid-cols-2">
+        <div className="mt-6 flex justify-end">
+          <button onClick={downloadCsv} className="btn-ghost text-sm">CSV exportieren</button>
+        </div>
+      )}
+
+      {result && (
+        <section className="mt-4 grid gap-8 md:grid-cols-2">
           <DomainPanel snapshot={result.primary} />
           {result.compare && <DomainPanel snapshot={result.compare} />}
           {!result.compare && (

@@ -110,7 +110,11 @@ async function setupMocks(page: Page, state: MockState) {
     const method = route.request().method();
 
     // Some endpoints get hit by other paths (e.g. `rpc/...`) — pass them.
-    const known = ["projects", "audits", "keywords", "rankings", "notifications", "users"];
+    const known = [
+      "projects", "audits", "keywords", "rankings", "notifications", "users",
+      "keyword_research", "competitor_analysis", "dashboard_snapshots", "traffic_history",
+      "settings",
+    ];
     if (!known.includes(table)) {
       return jsonRoute(route, []);
     }
@@ -197,6 +201,72 @@ async function setupMocks(page: Page, state: MockState) {
   });
 
   await page.route("**/api/notifications", (route) => jsonRoute(route, { notifications: state.notifications }));
+
+  // Phase 2 mocks — deterministic fake responses so the new pages render.
+  await page.route("**/api/keywords/research", async (route) => {
+    if (route.request().method() === "GET") return jsonRoute(route, { items: [] });
+    const body = JSON.parse(route.request().postData() ?? "{}") as { keyword: string };
+    return jsonRoute(route, {
+      id: "00000000-0000-0000-0000-000000000aa1",
+      keyword: body.keyword,
+      locale: "de",
+      metrics: { keyword: body.keyword, search_volume: 1200, cpc: 1.42, competition: 0.4, keyword_difficulty: 35 },
+      serp: Array.from({ length: 10 }, (_, i) => ({
+        position: i + 1, title: `Result ${i + 1}`, url: `https://example${i + 1}.com/`,
+        domain: `example${i + 1}.com`, snippet: `Snippet ${i + 1}`,
+      })),
+      related: [
+        { keyword: `${body.keyword} test`, search_volume: 300, cpc: 0.8, competition: 0.2, keyword_difficulty: 20 },
+      ],
+    });
+  });
+
+  await page.route("**/api/competitors/analyze", async (route) => {
+    if (route.request().method() === "GET") return jsonRoute(route, { items: [] });
+    const body = JSON.parse(route.request().postData() ?? "{}") as { domain: string };
+    const snap = (d: string) => ({
+      domain: d,
+      overview: { domain: d, organic_keywords_count: 1000, organic_traffic: 5000, paid_traffic: 100 },
+      keywords: [{ keyword: "k1", position: 3, search_volume: 1000, traffic: 200, url: `https://${d}/k1` }],
+      competitors: [{ domain: `c1-${d}`, intersections: 50, organic_traffic: 8000 }],
+      backlinks: { backlinks: 1000, referring_domains: 100, rank: 500 },
+    });
+    return jsonRoute(route, {
+      id: "00000000-0000-0000-0000-000000000bb1",
+      locale: "de",
+      primary: snap(body.domain),
+      compare: null,
+    });
+  });
+
+  await page.route("**/api/dashboard/**", async (route) => {
+    return jsonRoute(route, {
+      snapshot: {
+        project_id: TEST_PROJECT_ID,
+        organic_traffic: 1000,
+        organic_keywords_count: 200,
+        traffic_trend: Array.from({ length: 7 }, (_, i) => ({
+          date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          traffic: 1000 + i * 50,
+        })),
+        top_gainers: [{ keyword: "k1", old_position: 10, new_position: 4 }],
+        top_losers: [{ keyword: "k2", old_position: 3, new_position: 9 }],
+        competitor_moves: [{ domain: "rival.com", change: 100, traffic: 5000 }],
+        refreshed_at: new Date().toISOString(),
+      },
+      cached: false,
+    });
+  });
+
+  await page.route("**/api/settings/notifications", async (route) => {
+    if (route.request().method() === "GET") {
+      return jsonRoute(route, {
+        settings: { email_notifications: true, ranking_threshold: 3, notification_frequency: "daily" },
+        projects: state.projects.map((p) => ({ id: p.id, domain: p.domain, notification_threshold: null })),
+      });
+    }
+    return jsonRoute(route, { ok: true });
+  });
 }
 
 // Filter rows by Supabase's `?col=eq.value` syntax — covers the queries our
@@ -303,5 +373,55 @@ test.describe("climbr.io smoke", () => {
     expect(await sparklines.count()).toBeGreaterThanOrEqual(TEST_KEYWORDS.length);
 
     await screenshot(page, "rankings-tab.png");
+  });
+
+  test("keyword research page renders metrics, SERP and related", async ({ page }) => {
+    const state = freshState();
+    await injectSession(page);
+    await setupMocks(page, state);
+
+    await page.goto("/keywords");
+    await expect(page.getByRole("heading", { name: /keyword research/i })).toBeVisible();
+
+    await page.getByLabel(/keyword oder phrase/i).fill("leather backpack");
+    await page.getByRole("button", { name: /analyse starten/i }).click();
+
+    // Top-10 SERP entries.
+    await expect(page.getByText("example1.com")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/related|verwandt/i).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /csv exportieren/i })).toBeVisible();
+
+    await screenshot(page, "keyword-research.png");
+  });
+
+  test("competitors page renders domain snapshot", async ({ page }) => {
+    const state = freshState();
+    await injectSession(page);
+    await setupMocks(page, state);
+
+    await page.goto("/competitors");
+    await expect(page.getByRole("heading", { name: /wettbewerber/i })).toBeVisible();
+
+    await page.getByLabel(/^domain$/i).fill("example-shop.com");
+    await page.getByRole("button", { name: /^analysieren$/i }).click();
+
+    await expect(page.getByRole("heading", { name: "example-shop.com" })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/c1-example-shop\.com/)).toBeVisible();
+
+    await screenshot(page, "competitors.png");
+  });
+
+  test("notification settings page loads + saves", async ({ page }) => {
+    const state = freshState();
+    await injectSession(page);
+    await setupMocks(page, state);
+
+    await page.goto("/settings/notifications");
+    await expect(page.getByRole("heading", { name: /benachrichtigungs/i })).toBeVisible();
+    await expect(page.getByLabel(/frequenz/i)).toBeVisible();
+    await page.getByRole("button", { name: /änderungen speichern/i }).click();
+    await expect(page.getByText(/gespeichert/i)).toBeVisible({ timeout: 5_000 });
+
+    await screenshot(page, "notification-settings.png");
   });
 });

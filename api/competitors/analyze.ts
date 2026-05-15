@@ -5,6 +5,8 @@
 import { serverClient } from "../../lib/supabase.js";
 import { CompetitorAnalysisInput, badRequest, json } from "../../lib/validation.js";
 import { requireAuth } from "../../lib/auth.js";
+import { limitsFor, monthlyCount, planLimitError } from "../../lib/plans.js";
+import { isOverHourlyLimit } from "../../lib/ratelimit.js";
 import {
   fetchDomainOverview,
   fetchDomainKeywords,
@@ -16,6 +18,7 @@ import {
 export const config = { runtime: "nodejs" };
 
 const CACHE_TTL_SECONDS = 60 * 60 * 24;
+const HOURLY_LIMIT_PER_USER = 10;
 
 async function snapshotFor(domain: string, locale: "en" | "de", db: ReturnType<typeof serverClient>) {
   const opts = { db, cacheTtlSeconds: CACHE_TTL_SECONDS };
@@ -66,6 +69,24 @@ export default async function handler(req: Request): Promise<Response> {
   const parsed = CompetitorAnalysisInput.safeParse(body);
   if (!parsed.success) return badRequest("invalid input", parsed.error.flatten());
   const { domain, compareDomain, locale } = parsed.data;
+
+  // A "compare" request counts as 1 in plan-limit terms but uses 2× API calls;
+  // surface that distinction with a hard cap on hourly throughput.
+  const monthlyLimit = limitsFor(ctx.plan).competitorAnalysesPerMonth;
+  const monthlyUsed = await monthlyCount(db as never, "competitor_analysis", ctx.userId);
+  if (monthlyUsed >= monthlyLimit) {
+    return json(
+      planLimitError({ resource: "competitor_analyses", plan: ctx.plan, current: monthlyUsed, limit: monthlyLimit }),
+      { status: 402 },
+    );
+  }
+  const hourly = await isOverHourlyLimit(db, "competitor_analysis", ctx.userId, HOURLY_LIMIT_PER_USER);
+  if (hourly.over) {
+    return json(
+      { error: { code: "RATE_LIMITED", message: `Too many requests — wait a few minutes (max ${HOURLY_LIMIT_PER_USER}/hour).` } },
+      { status: 429 },
+    );
+  }
 
   try {
     const primary = await snapshotFor(domain, locale, db);

@@ -5,9 +5,11 @@ import { useToast } from "../components/Toast";
 import {
   runKeywordResearch,
   listKeywordResearch,
+  type ApiError,
   type KeywordResearchResponse,
   type KeywordResearchSummary,
 } from "../lib/api";
+import { csvCell, triggerCsvDownload } from "../lib/csv";
 
 function fmtNumber(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -40,6 +42,7 @@ export default function KeywordResearch() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<KeywordResearchResponse | null>(null);
   const [history, setHistory] = useState<KeywordResearchSummary[]>([]);
+  const [planLimit, setPlanLimit] = useState<{ limit: number; plan: string; message: string } | null>(null);
 
   useEffect(() => {
     if (session.loading || !session.token) return;
@@ -63,16 +66,52 @@ export default function KeywordResearch() {
     if (!k) return;
     setBusy(true);
     setResult(null);
+    setPlanLimit(null);
     try {
       const data = await runKeywordResearch(session.token, { keyword: k, locale });
       setResult(data);
       toast.push("success", `Keyword-Daten geladen für "${k}"`);
       void loadHistory(session.token);
     } catch (e) {
-      toast.push("error", e instanceof Error ? e.message : "Keyword research failed");
+      const apiErr = e as ApiError;
+      if (apiErr.code === "PLAN_LIMIT_REACHED") {
+        const body = apiErr.body as { error: { limit: number; plan: string; message: string } };
+        setPlanLimit({ limit: body.error.limit, plan: body.error.plan, message: body.error.message });
+      } else if (apiErr.code === "RATE_LIMITED") {
+        toast.push("error", apiErr.message);
+      } else {
+        toast.push("error", e instanceof Error ? e.message : "Keyword research failed");
+      }
     } finally {
       setBusy(false);
     }
+  }
+
+  function downloadCsv() {
+    if (!result) return;
+    const rows: string[][] = [
+      ["keyword", "search_volume", "cpc", "keyword_difficulty", "competition"],
+    ];
+    if (result.metrics) {
+      rows.push([
+        result.metrics.keyword,
+        result.metrics.search_volume?.toString() ?? "",
+        result.metrics.cpc?.toString() ?? "",
+        result.metrics.keyword_difficulty?.toString() ?? "",
+        result.metrics.competition?.toString() ?? "",
+      ]);
+    }
+    for (const r of result.related) {
+      rows.push([
+        r.keyword,
+        r.search_volume?.toString() ?? "",
+        r.cpc?.toString() ?? "",
+        r.keyword_difficulty?.toString() ?? "",
+        r.competition?.toString() ?? "",
+      ]);
+    }
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+    triggerCsvDownload(csv, `keywords-${result.keyword.replace(/[^a-z0-9]+/gi, "-")}.csv`);
   }
 
   if (!session.loading && !session.token) {
@@ -121,6 +160,15 @@ export default function KeywordResearch() {
         </button>
       </form>
 
+      {planLimit && (
+        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm" role="alert">
+          <p className="font-medium text-amber-800">{planLimit.message}</p>
+          <p className="mt-1 text-amber-700">
+            <a href="/pricing" className="font-medium underline">Upgrade deinen Plan</a> für mehr Keyword-Recherchen.
+          </p>
+        </div>
+      )}
+
       {busy && (
         <p className="mt-6 text-slate2" role="status">
           Hole Daten von DataForSEO… (das kann ein paar Sekunden dauern)
@@ -129,6 +177,11 @@ export default function KeywordResearch() {
 
       {result && (
         <section className="mt-8 space-y-6">
+          <div className="flex justify-end">
+            <button onClick={downloadCsv} className="btn-ghost text-sm">
+              CSV exportieren
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <MetricCard label="Suchvolumen / Monat" value={fmtNumber(result.metrics?.search_volume)} />
             <MetricCard label="CPC" value={fmtCurrency(result.metrics?.cpc)} />
