@@ -10,6 +10,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import KeywordResearch from "./pages/KeywordResearch";
 import Competitors from "./pages/Competitors";
 import NotificationSettingsPage from "./pages/NotificationSettings";
+import Billing from "./pages/Billing";
 import { ToastProvider } from "./components/Toast";
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
               <Link to="/competitors" className="text-slate2 hover:text-ink">Competitors</Link>
               <Link to="/dashboard" className="text-slate2 hover:text-ink">Dashboard</Link>
               <Link to="/pricing" className="text-slate2 hover:text-ink">Pricing</Link>
+              <Link to="/billing" className="text-slate2 hover:text-ink">Billing</Link>
               <Link to="/login" className="text-slate2 hover:text-ink">Log in</Link>
               <Link to="/signup" className="btn-ghost">Sign up</Link>
             </div>
@@ -46,6 +48,7 @@ export default function App() {
             <Route path="/keywords" element={<KeywordResearch />} />
             <Route path="/competitors" element={<Competitors />} />
             <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+            <Route path="/billing" element={<Billing />} />
           </Routes>
         </main>
 

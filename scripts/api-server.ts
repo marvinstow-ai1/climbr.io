@@ -23,6 +23,10 @@ const routes: { match: (path: string) => boolean; load: () => Promise<{ default:
   { match: (p) => p === "/api/competitors/analyze",    load: () => import("../api/competitors/analyze.ts") },
   { match: (p) => /^\/api\/dashboard\/[^/]+$/.test(p), load: () => import("../api/dashboard/[projectId].ts") },
   { match: (p) => p === "/api/settings/notifications", load: () => import("../api/settings/notifications.ts") },
+  { match: (p) => p === "/api/billing/me",             load: () => import("../api/billing/me.ts") },
+  { match: (p) => p === "/api/billing/checkout",       load: () => import("../api/billing/checkout.ts") },
+  { match: (p) => p === "/api/billing/portal",         load: () => import("../api/billing/portal.ts") },
+  { match: (p) => p === "/api/billing/webhook",        load: () => import("../api/billing/webhook.ts") },
   { match: (p) => p === "/api/cron/daily-rankings",    load: () => import("../api/cron/daily-rankings.ts") },
   { match: (p) => p === "/api/cron/refresh-dashboards",load: () => import("../api/cron/refresh-dashboards.ts") },
 ];

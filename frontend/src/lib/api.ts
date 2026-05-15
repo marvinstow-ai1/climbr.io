@@ -350,6 +350,50 @@ export async function updateNotificationSettings(
   });
 }
 
+// ---------- billing ----------
+
+export interface BillingState {
+  plan: "free" | "starter" | "pro";
+  limits: {
+    keywords: number;
+    auditsPerMonth: number;
+    keywordResearchPerMonth: number;
+    competitorAnalysesPerMonth: number;
+  };
+  subscription: {
+    status: string | null;
+    current_period_end: string | null;
+    cancel_at_period_end: boolean;
+    trial_end: string | null;
+    has_customer: boolean;
+  };
+}
+
+export async function getBillingState(token: string): Promise<BillingState> {
+  return apiJson("/api/billing/me", {
+    method: "GET",
+    headers: { authorization: `Bearer ${token}` },
+  });
+}
+
+export async function startCheckout(
+  token: string,
+  payload: { plan: "starter" | "pro"; trial?: boolean },
+): Promise<{ url: string }> {
+  return apiJson("/api/billing/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function openPortal(token: string): Promise<{ url: string }> {
+  return apiJson("/api/billing/portal", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+}
+
 // ---------- audit run (authed variant) ----------
 
 export async function runProjectAudit(
