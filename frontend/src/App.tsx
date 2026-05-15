@@ -9,19 +9,22 @@ import ProjectNew from "./pages/ProjectNew";
 import ProjectDetail from "./pages/ProjectDetail";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
+import { PublicShell } from "./components/layout/PublicShell";
 
 export default function App() {
   return (
     <ToastProvider>
       <Routes>
-        {/* Public routes (no shell — they have their own minimal chrome) */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/audit/:id" element={<AuditReport />} />
+        {/* Public routes — minimaler Header mit Login/Signup-Buttons. */}
+        <Route element={<PublicShell />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/audit/:id" element={<AuditReport />} />
+        </Route>
 
-        {/* Authed routes — wrapped in the AppShell (TopNav + Sidebar + Footer).
+        {/* Authed routes — AppShell (TopNav + Sidebar + Footer).
             AppShell redirects to /login when the user isn't signed in. */}
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<Dashboard />} />
