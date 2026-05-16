@@ -29,6 +29,20 @@ export function Sidebar({ projects, loading, open, onClose }: Props) {
         <div className="flex flex-col gap-4">
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              SEO-Workflow
+            </h2>
+            <ul className="mt-2 space-y-0.5">
+              <SeoNavItem to="/seo/workflow" label="Monatsplan" onClick={onClose} />
+              <SeoNavItem to="/seo/opportunities" label="Chancen" onClick={onClose} />
+              <SeoNavItem to="/seo/tasks" label="Aufgaben" onClick={onClose} />
+              <SeoNavItem to="/seo/briefs" label="Briefings" onClick={onClose} />
+              <SeoNavItem to="/seo/local" label="Lokales SEO" onClick={onClose} />
+              <SeoNavItem to="/seo/reports" label="Fortschritt" onClick={onClose} />
+              <SeoNavItem to="/seo" label="Verbindungen" onClick={onClose} />
+            </ul>
+          </div>
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
               Projekte
             </h2>
             <ul className="mt-2 space-y-0.5" data-testid="sidebar-project-list">
@@ -71,5 +85,26 @@ export function Sidebar({ projects, loading, open, onClose }: Props) {
         </div>
       </aside>
     </>
+  );
+}
+
+function SeoNavItem({ to, label, onClick }: { to: string; label: string; onClick: () => void }) {
+  return (
+    <li>
+      <NavLink
+        to={to}
+        end={to === "/seo"}
+        onClick={onClick}
+        className={({ isActive }) =>
+          `block truncate rounded-md px-2 py-1.5 text-sm transition ${
+            isActive
+              ? "bg-accent-dim font-medium text-accent"
+              : "text-ink hover:bg-white/[0.02]"
+          }`
+        }
+      >
+        {label}
+      </NavLink>
+    </li>
   );
 }
