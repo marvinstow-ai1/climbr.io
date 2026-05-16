@@ -36,6 +36,10 @@ export default function App() {
           <Route path="/legal/impressum" element={<Impressum />} />
           <Route path="/legal/datenschutz" element={<Datenschutz />} />
           <Route path="/legal/agb" element={<AGB />} />
+          {/* Wiki ist öffentlich zugänglich — soll auch ohne Account
+              durchsucht werden können. */}
+          <Route path="/wiki" element={<WikiIndex />} />
+          <Route path="/wiki/:slug" element={<WikiArticle />} />
         </Route>
 
         {/* Authed routes — AppShell (TopNav + Sidebar + Footer).
@@ -44,9 +48,6 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects/new" element={<ProjectNew />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
-          {/* Placeholder routes — implemented in later Phase-4 sections */}
-          <Route path="/wiki" element={<WikiIndex />} />
-          <Route path="/wiki/:slug" element={<WikiArticle />} />
           <Route path="/einstellungen" element={<Einstellungen />} />
         </Route>
 
