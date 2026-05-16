@@ -42,6 +42,7 @@ export function TopNav({ onToggleSidebar }: Props) {
 
         <nav aria-label="Hauptnavigation" className="ml-6 hidden items-center gap-1 md:flex">
           <NavItem to="/dashboard">Dashboard</NavItem>
+          <NavItem to="/seo/workflow" match="/seo">SEO-Workflow</NavItem>
           <NavItem to="/wiki">Wiki</NavItem>
           <NavItem to="/einstellungen">Einstellungen</NavItem>
         </nav>
@@ -104,15 +105,16 @@ export function TopNav({ onToggleSidebar }: Props) {
   );
 }
 
-function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
+function NavItem({ to, children, match }: { to: string; children: React.ReactNode; match?: string }) {
   return (
     <NavLink
       to={to}
-      className={({ isActive }) =>
-        `rounded-md px-3 py-1.5 text-sm transition ${
-          isActive ? "bg-accent-dim text-accent" : "text-ink-muted hover:bg-white/[0.04] hover:text-ink"
-        }`
-      }
+      className={({ isActive }) => {
+        const active = isActive || (match && typeof window !== "undefined" && window.location.pathname.startsWith(match));
+        return `rounded-md px-3 py-1.5 text-sm transition ${
+          active ? "bg-accent-dim text-accent" : "text-ink-muted hover:bg-white/[0.04] hover:text-ink"
+        }`;
+      }}
     >
       {children}
     </NavLink>
