@@ -18,7 +18,6 @@ import WikiArticle from "./pages/wiki/WikiArticle";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
 import { PublicShell } from "./components/layout/PublicShell";
-import { ComingSoonGuard } from "./components/layout/ComingSoonGuard";
 import { CookieBanner } from "./components/cookie/CookieBanner";
 
 export default function App() {
@@ -27,17 +26,15 @@ export default function App() {
       <Routes>
         {/* Public routes — minimaler Header mit Login/Signup-Buttons. */}
         <Route element={<PublicShell />}>
-          {/* Landing bleibt hidden bis zum öffentlichen Launch. Der Guard
-              redirected anon→/login und authed→/dashboard. Zum Aktivieren
-              der Landing: <ComingSoonGuard> in App.tsx durch <Landing />
-              ersetzen. */}
-          <Route path="/" element={<ComingSoonGuard><Landing /></ComingSoonGuard>} />
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/passwort-vergessen" element={<PasswortVergessen />} />
           <Route path="/passwort-neu" element={<PasswortNeu />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/audit/:id" element={<AuditReport />} />
+          <Route path="/wiki" element={<WikiIndex />} />
+          <Route path="/wiki/:slug" element={<WikiArticle />} />
           <Route path="/legal/impressum" element={<Impressum />} />
           <Route path="/legal/datenschutz" element={<Datenschutz />} />
           <Route path="/legal/agb" element={<AGB />} />
@@ -49,9 +46,6 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects/new" element={<ProjectNew />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
-          {/* Placeholder routes — implemented in later Phase-4 sections */}
-          <Route path="/wiki" element={<WikiIndex />} />
-          <Route path="/wiki/:slug" element={<WikiArticle />} />
           <Route path="/einstellungen" element={<Einstellungen />} />
         </Route>
 
