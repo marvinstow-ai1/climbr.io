@@ -19,9 +19,9 @@ export default function FixCard({ fix }: { fix: AuditFix }) {
         <span className="text-xs text-slate2">~{fix.estimatedMinutes} min</span>
       </summary>
       <div className="mt-3 space-y-3 text-sm text-slate2">
-        <p><strong className="text-ink">Why it matters:</strong> {fix.why}</p>
+        <p><strong className="text-ink">Warum wichtig:</strong> {fix.why}</p>
         <div>
-          <strong className="text-ink">How to fix:</strong>
+          <strong className="text-ink">So setzt du das um:</strong>
           <ol className="mt-1 list-decimal space-y-1 pl-5">
             {fix.steps.map((s, i) => <li key={i}>{s}</li>)}
           </ol>

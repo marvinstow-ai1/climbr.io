@@ -7,6 +7,9 @@ import {
 } from "../../lib/api";
 import Sparkline from "../Sparkline";
 import type { ToastKind } from "../Toast";
+import { ExplainerBox } from "../learning/ExplainerBox";
+import { TooltipHint } from "../learning/TooltipHint";
+import { LEARNING_ENTRIES } from "../../data/learning";
 
 interface KeywordRow {
   id: string;
@@ -78,7 +81,7 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
       });
       setRows(next);
     } catch (e) {
-      onNotify("error", e instanceof Error ? e.message : "Failed to load rankings");
+      onNotify("error", e instanceof Error ? e.message : "Rankings konnten nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -101,7 +104,7 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
     try {
       const created = await apiAddKeyword(token, { projectId, keyword });
       setRows((r) => r.map((row) => (row.id === tempId ? { ...row, id: created.id } : row)));
-      onNotify("success", `Tracking "${keyword}"`);
+      onNotify("success", `"${keyword}" wird jetzt getrackt.`);
     } catch (err) {
       // Roll back.
       setRows((r) => r.filter((row) => row.id !== tempId));
@@ -110,9 +113,9 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
         const body = apiErr.body as { error: { limit: number; plan: string; message: string } };
         setPlanLimit({ limit: body.error.limit, plan: body.error.plan, message: body.error.message });
       } else if (apiErr.code === "DUPLICATE_KEYWORD") {
-        onNotify("error", "That keyword is already tracked.");
+        onNotify("error", "Dieses Keyword wird bereits getrackt.");
       } else {
-        onNotify("error", apiErr.message ?? "Could not add keyword");
+        onNotify("error", apiErr.message ?? "Keyword konnte nicht hinzugefügt werden.");
       }
       setNewKw(keyword);
     } finally {
@@ -126,23 +129,33 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
     setRows((r) => r.filter((x) => x.id !== row.id));
     try {
       await apiDeleteKeyword(token, row.id);
-      onNotify("info", `Removed "${row.keyword}"`);
+      onNotify("info", `"${row.keyword}" entfernt.`);
       setPlanLimit(null);
     } catch (err) {
       setRows(snapshot);
       const apiErr = err as ApiError;
-      onNotify("error", apiErr.message ?? "Could not remove keyword");
+      onNotify("error", apiErr.message ?? "Keyword konnte nicht entfernt werden.");
     }
   }
 
+  const rankingsExplainer = LEARNING_ENTRIES["rankings"]!;
+
   return (
     <div className="space-y-6">
+      <ExplainerBox
+        storageKey={rankingsExplainer.key}
+        title={rankingsExplainer.title}
+        explanation={rankingsExplainer.what}
+        whyItMatters={rankingsExplainer.whyItMatters}
+        nextStep={rankingsExplainer.nextStep}
+      />
+
       {!gscConnected && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Connect Google Search Console on the{" "}
-          <a href="/dashboard" className="font-medium underline">dashboard</a>{" "}
-          to pull real ranking positions. Until then we'll save your keywords but
-          show empty sparklines.
+          Verbinde Google Search Console im{" "}
+          <a href="/dashboard" className="font-medium underline">Dashboard</a>{" "}
+          um echte Ranking-Positionen abzurufen. Bis dahin speichern wir deine
+          Keywords, zeigen aber leere Sparklines.
         </div>
       )}
 
@@ -150,19 +163,23 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm" role="alert">
           <p className="font-medium text-amber-800">{planLimit.message}</p>
           <p className="mt-1 text-amber-700">
-            <a href="/pricing" className="font-medium underline">Upgrade your plan</a> or remove a keyword to free a slot.
+            <a href="/pricing" className="font-medium underline">Plan upgraden</a>{" "}
+            oder ein Keyword entfernen um Platz zu schaffen.
           </p>
         </div>
       )}
 
       <form onSubmit={onAdd} className="card flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <label htmlFor="new-keyword" className="block text-sm font-medium">Add keyword</label>
+          <label htmlFor="new-keyword" className="flex items-center gap-1.5 text-sm font-medium">
+            Keyword hinzufügen
+            <TooltipHint hint="Keywords sind die Begriffe, nach denen deine Kunden bei Google suchen. Tipp: Wähle Begriffe, die dein Produkt oder deine Dienstleistung genau beschreiben." />
+          </label>
           <input
             id="new-keyword"
             type="text"
             className="input mt-1"
-            placeholder="leather backpack"
+            placeholder="lederrucksack damen"
             value={newKw}
             maxLength={120}
             onChange={(e) => setNewKw(e.target.value)}
@@ -170,18 +187,18 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
             aria-describedby="kw-help"
           />
           <p id="kw-help" className="mt-1 text-xs text-slate2">
-            {rows.length} tracked
+            {rows.length} {rows.length === 1 ? "Keyword" : "Keywords"} getrackt
           </p>
         </div>
         <button type="submit" className="btn-primary" disabled={busy || !newKw.trim()}>
-          {busy ? "Adding…" : "Add keyword"}
+          {busy ? "Wird hinzugefügt…" : "Hinzufügen"}
         </button>
       </form>
 
       {loading ? (
-        <p className="text-slate2">Loading rankings…</p>
+        <p className="text-slate2">Lade Rankings…</p>
       ) : rows.length === 0 ? (
-        <p className="text-slate2">No keywords tracked yet. Add one above.</p>
+        <p className="text-slate2">Noch keine Keywords getrackt. Füg oben eines hinzu.</p>
       ) : (
         <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
           {rows.map((row) => {
@@ -195,27 +212,41 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
               delta == null || delta === 0 ? "text-slate2"
               : delta > 0 ? "text-green-600"
               : "text-red-600";
+            const deltaTooltip =
+              delta == null || delta === 0
+                ? undefined
+                : delta > 0
+                  ? `Dein Keyword ist ${delta} ${delta === 1 ? "Platz" : "Plätze"} nach oben gerutscht — mehr Sichtbarkeit bei Google.`
+                  : `Dein Keyword ist ${Math.abs(delta)} ${Math.abs(delta) === 1 ? "Platz" : "Plätze"} nach unten gerutscht — weniger Sichtbarkeit.`;
             return (
               <li key={row.id} className="flex items-center gap-4 p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">{row.keyword}</p>
+                  <p className="break-words font-medium">{row.keyword}</p>
                   <p className="text-xs text-slate2">
-                    {row.latest != null ? `Position #${row.latest}` : "No data yet"}
+                    {row.latest != null ? `Position #${row.latest}` : "Noch keine Daten"}
                     {delta != null && delta !== 0 && (
-                      <> · <span className={deltaColor}>{deltaLabel}</span></>
+                      <>
+                        {" · "}
+                        <span className={deltaColor} title={deltaTooltip}>
+                          {deltaLabel}
+                        </span>
+                      </>
                     )}
                   </p>
                 </div>
-                <div aria-hidden className="shrink-0">
+                <div
+                  className="shrink-0"
+                  title="Diese Kurve zeigt deine Position in Google über die letzten 14 Tage. Je niedriger die Zahl, desto weiter vorne bist du."
+                >
                   <Sparkline points={row.history} label={`${row.keyword} trend`} />
                 </div>
                 <button
                   onClick={() => onDelete(row)}
                   className="btn-ghost"
-                  aria-label={`Remove keyword ${row.keyword}`}
+                  aria-label={`Keyword ${row.keyword} entfernen`}
                   disabled={row.id.startsWith("temp-")}
                 >
-                  Remove
+                  Entfernen
                 </button>
               </li>
             );
