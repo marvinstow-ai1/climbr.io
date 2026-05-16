@@ -15,6 +15,21 @@ export default defineConfig({
   // and the client (this Vite build). Frontend only sees VITE_* vars.
   envDir: "..",
   base: "/",
+  build: {
+    // Routes are lazy-loaded in App.tsx; split heavy vendors so the initial
+    // bundle stays small and shared deps are cached across page chunks.
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return "react-vendor";
+          }
+          if (id.includes("/@supabase/")) return "supabase";
+        },
+      },
+    },
+  },
   server: {
     host: true,
     port: 5173,
