@@ -7,7 +7,11 @@ import type { AppShellContext } from "../components/layout/AppShell";
 import { OverviewCards } from "../components/dashboard/OverviewCards";
 import { ProjectTable } from "../components/dashboard/ProjectTable";
 import { EmptyDashboard } from "../components/dashboard/EmptyDashboard";
+import { VisibilityTrend } from "../components/dashboard/VisibilityTrend";
+import { SourcesChart } from "../components/dashboard/SourcesChart";
+import { RisingKeywords } from "../components/dashboard/RisingKeywords";
 import {
+  computeAverageScore,
   computeKeywordMovements,
   pickLatestAudit,
 } from "../components/dashboard/metrics";
@@ -123,6 +127,14 @@ export default function Dashboard() {
 
   const latestAudit = useMemo(() => pickLatestAudit(audits), [audits]);
   const movements = useMemo(() => computeKeywordMovements(rankings, 7), [rankings]);
+  const averageScore = useMemo(
+    () => computeAverageScore(projects, audits),
+    [projects, audits],
+  );
+  const totalKeywords = useMemo(
+    () => Object.values(keywordCounts).reduce((s, n) => s + n, 0),
+    [keywordCounts],
+  );
 
   const rows = useMemo(
     () =>
@@ -146,45 +158,99 @@ export default function Dashboard() {
     }
   }, [banner]);
 
+  const isEmpty = !projectsLoading && projects.length === 0;
+
   return (
     <div
-      className="mx-auto max-w-6xl px-4 py-8 sm:px-6"
+      className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8"
       data-testid="dashboard-page"
     >
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink sm:text-3xl">Dashboard</h1>
-        <Link to="/projects/new" className="btn-primary">+ Neues Projekt</Link>
-      </div>
+      <DashboardHeader />
 
       {loadError && (
-        <p className="mt-4 text-sm text-red-400" role="alert">
+        <p className="mt-4 rounded-lg border border-rose-dim bg-rose-dim px-4 py-2 text-sm text-rose" role="alert">
           {loadError}
         </p>
       )}
 
-      <section className="mt-6">
-        <OverviewCards
-          projects={projects}
-          latestAudit={latestAudit}
-          movements={movements}
-        />
-      </section>
-
-      <section className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold text-ink">Deine Projekte</h2>
-        {projectsLoading ? (
-          <p className="text-ink-muted">Lade…</p>
-        ) : projects.length === 0 ? (
+      {isEmpty ? (
+        <section className="mt-6">
           <EmptyDashboard />
-        ) : (
-          <ProjectTable
-            rows={rows}
-            busyProjectId={busyProjectId}
-            onConnectGsc={connectGsc}
-            onDisconnectGsc={disconnectGsc}
+        </section>
+      ) : (
+        <>
+          <section className="mt-6">
+            <OverviewCards
+              projects={projects}
+              latestAudit={latestAudit}
+              movements={movements}
+              averageScore={averageScore}
+              totalKeywords={totalKeywords}
+            />
+          </section>
+
+          <section className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <VisibilityTrend rankings={rankings} />
+            </div>
+            <div>
+              <SourcesChart projects={projects} audits={audits} />
+            </div>
+          </section>
+
+          <section className="mt-4">
+            <RisingKeywords rankings={rankings} projects={projects} />
+          </section>
+
+          <section className="mt-4">
+            {projectsLoading ? (
+              <p className="text-ink-muted">Lade…</p>
+            ) : (
+              <ProjectTable
+                rows={rows}
+                busyProjectId={busyProjectId}
+                onConnectGsc={connectGsc}
+                onDisconnectGsc={disconnectGsc}
+              />
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DashboardHeader() {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
+          Workspace · Übersicht
+        </div>
+        <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          Performance
+        </h1>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="relative hidden sm:block">
+          <span className="sr-only">Projekte durchsuchen</span>
+          <input
+            type="search"
+            placeholder="Projekte, Keywords durchsuchen…"
+            className="input h-9 w-64 py-2 pl-9 text-sm"
           />
-        )}
-      </section>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 fill-ink-muted"
+          >
+            <path d="M9 3a6 6 0 014.47 10.03l3.25 3.25-1.42 1.41-3.24-3.25A6 6 0 119 3zm0 2a4 4 0 100 8 4 4 0 000-8z" />
+          </svg>
+        </label>
+        <Link to="/projects/new" className="btn-primary h-9 px-4 py-2 text-sm">
+          + Neues Projekt
+        </Link>
+      </div>
     </div>
   );
 }
