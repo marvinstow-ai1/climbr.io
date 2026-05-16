@@ -2,14 +2,14 @@
 // Pings the provider with the user's stored credentials and persists the
 // result on the integrations row.
 
-import { decryptToken, serverClient } from "../../../lib/supabase.js";
-import { requireAuth } from "../../../lib/auth.js";
-import { json, badRequest } from "../../../lib/validation.js";
-import { pingServerDataForSeo } from "../../../lib/dataforseo.js";
+import { decryptToken, serverClient } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
+import { pingServerDataForSeo } from "../dataforseo.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_test(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return json({ error: { message: "method not allowed" } }, { status: 405 });
   }

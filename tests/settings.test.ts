@@ -19,7 +19,9 @@ async function importGet() {
 }
 
 async function importPatch() {
-  return (await import("../api/settings/notifications.js")).default;
+  // PATCH /api/settings/notifications is now served by api/settings.ts via a
+  // vercel.json rewrite. The handler detects the sub-route from the URL.
+  return (await import("../api/settings.js")).default;
 }
 
 function reqJson(opts: { token?: string; method?: string; body?: unknown; path?: string } = {}): Request {
@@ -122,21 +124,21 @@ describe("PATCH /api/settings/notifications", () => {
   it("returns 401 without auth", async () => {
     setup();
     const handler = await importPatch();
-    const res = await handler(reqJson({ method: "PATCH", body: { email_notifications: false } }));
+    const res = await handler(reqJson({ method: "PATCH", path: "/api/settings/notifications", body: { email_notifications: false } }));
     expect(res.status).toBe(401);
   });
 
   it("returns 405 for non-PATCH", async () => {
     setup();
     const handler = await importPatch();
-    const res = await handler(reqJson({ token: "t", method: "GET" }));
+    const res = await handler(reqJson({ token: "t", method: "GET", path: "/api/settings/notifications" }));
     expect(res.status).toBe(405);
   });
 
   it("returns 400 for invalid body", async () => {
     setup();
     const handler = await importPatch();
-    const res = await handler(reqJson({ token: "t", method: "PATCH", body: { email_notifications: "not-a-bool" } }));
+    const res = await handler(reqJson({ token: "t", method: "PATCH", path: "/api/settings/notifications", body: { email_notifications: "not-a-bool" } }));
     expect(res.status).toBe(400);
   });
 
@@ -146,7 +148,7 @@ describe("PATCH /api/settings/notifications", () => {
       settings: [{ user_id: "user-1", email_notifications: true }],
     });
     const handler = await importPatch();
-    const res = await handler(reqJson({ token: "t", method: "PATCH", body: { email_notifications: false } }));
+    const res = await handler(reqJson({ token: "t", method: "PATCH", path: "/api/settings/notifications", body: { email_notifications: false } }));
     expect(res.status).toBe(200);
     const settingsRow = fake.state.settings.find((s) => s.user_id === userId);
     expect(settingsRow?.email_notifications).toBe(false);
@@ -155,7 +157,7 @@ describe("PATCH /api/settings/notifications", () => {
   it("creates a settings row if none existed yet (upsert behaviour)", async () => {
     const { fake } = setup({ userId: "user-1", settings: [] });
     const handler = await importPatch();
-    const res = await handler(reqJson({ token: "t", method: "PATCH", body: { email_notifications: true } }));
+    const res = await handler(reqJson({ token: "t", method: "PATCH", path: "/api/settings/notifications", body: { email_notifications: true } }));
     expect(res.status).toBe(200);
     expect(fake.state.settings).toHaveLength(1);
     expect(fake.state.settings[0]).toMatchObject({ user_id: "user-1", email_notifications: true });

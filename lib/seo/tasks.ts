@@ -5,17 +5,17 @@
 // PATCH  /api/seo/tasks?id=...           -> update status: { status: "open"|"in_progress"|"done"|"ignored" }
 // DELETE /api/seo/tasks?id=...           -> delete a task
 
-import { serverClient } from "../../lib/supabase.js";
-import { requireAuth } from "../../lib/auth.js";
-import { json, badRequest } from "../../lib/validation.js";
-import { taskFromOpportunity } from "../../lib/seoTasks.js";
+import { serverClient } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
+import { taskFromOpportunity } from "../seoTasks.js";
 
 export const config = { runtime: "nodejs" };
 
 const VALID_STATUS = ["open", "in_progress", "done", "ignored"] as const;
 const VALID_LANES = ["connect", "discover", "optimize", "publish", "review", "local"] as const;
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_tasks(req: Request): Promise<Response> {
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;

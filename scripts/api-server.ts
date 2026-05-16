@@ -19,8 +19,8 @@ const routes: { match: (path: string) => boolean; load: () => Promise<{ default:
   { match: (p) => p === "/api/gsc/connect",    load: () => import("../api/gsc/connect.ts") },
   { match: (p) => p === "/api/gsc/callback",   load: () => import("../api/gsc/callback.ts") },
   { match: (p) => p === "/api/gsc/disconnect", load: () => import("../api/gsc/disconnect.ts") },
-  { match: (p) => p === "/api/settings",       load: () => import("../api/settings.ts") },
-  { match: (p) => p === "/api/settings/notifications", load: () => import("../api/settings/notifications.ts") },
+  { match: (p) => p === "/api/settings" || p === "/api/settings/notifications", load: () => import("../api/settings.ts") },
+  { match: (p) => p.startsWith("/api/seo"),    load: () => import("../api/seo.ts") },
 ];
 
 function nodeToWebRequest(req: IncomingMessage): Request {

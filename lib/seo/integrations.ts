@@ -9,10 +9,10 @@
 // OpenAI: per-user encrypted key (integrations table) — server env-fallback
 // DataForSEO: SERVER-SIDE only. Never accepted from the client.
 
-import { serverClient, encryptToken } from "../../lib/supabase.js";
-import { requireAuth } from "../../lib/auth.js";
-import { json, badRequest } from "../../lib/validation.js";
-import { serverCredentials as dataForSeoServerCreds } from "../../lib/dataforseo.js";
+import { serverClient, encryptToken } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
+import { serverCredentials as dataForSeoServerCreds } from "../dataforseo.js";
 
 export const config = { runtime: "nodejs" };
 
@@ -26,7 +26,7 @@ interface IntegrationStatus {
   meta?: Record<string, unknown>;
 }
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_integrations(req: Request): Promise<Response> {
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;

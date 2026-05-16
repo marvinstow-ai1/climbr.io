@@ -3,13 +3,13 @@
 // changes since the last report (where data is available). Computes
 // on-the-fly from rankings + tasks, then persists for trend comparisons.
 
-import { decryptToken, serverClient } from "../../lib/supabase.js";
-import { requireAuth } from "../../lib/auth.js";
-import { json, badRequest } from "../../lib/validation.js";
+import { decryptToken, serverClient } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_reports(req: Request): Promise<Response> {
   if (req.method !== "GET" && req.method !== "POST") {
     return json({ error: { message: "method not allowed" } }, { status: 405 });
   }
@@ -104,7 +104,7 @@ async function fetchGscTotals(
   if (!project?.gsc_refresh_token_enc || !project.gsc_site_url) return null;
   if ((process.env.MOCK_GSC ?? "").toLowerCase() === "true") return mockTotals(window);
   try {
-    const { refreshAccessToken } = await import("../../lib/gsc.js");
+    const { refreshAccessToken } = await import("../gsc.js");
     const refresh = await decryptToken(project.gsc_refresh_token_enc);
     const { accessToken } = await refreshAccessToken(refresh);
     const now = new Date();

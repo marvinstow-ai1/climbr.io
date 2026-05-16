@@ -1,14 +1,14 @@
 // GET  /api/seo/opportunities?projectId=...  -> list opportunities
 // POST /api/seo/opportunities  { projectId }  -> re-run detection for a project
 
-import { decryptToken, serverClient } from "../../lib/supabase.js";
-import { requireAuth } from "../../lib/auth.js";
-import { json, badRequest } from "../../lib/validation.js";
-import { detectOpportunities } from "../../lib/opportunities.js";
+import { decryptToken, serverClient } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
+import { detectOpportunities } from "../opportunities.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_opportunities(req: Request): Promise<Response> {
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;

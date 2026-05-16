@@ -5,16 +5,16 @@
 // "progress" is computed from concrete signals (GSC connected? opportunities
 // detected? open tasks?) so the user sees real state, not just toggles.
 
-import { serverClient } from "../../lib/supabase.js";
-import { requireAuth } from "../../lib/auth.js";
-import { json, badRequest } from "../../lib/validation.js";
+import { serverClient } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
 
 export const config = { runtime: "nodejs" };
 
 const STEPS = ["connect", "discover", "optimize", "publish", "review"] as const;
 type Step = typeof STEPS[number];
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_workflow(req: Request): Promise<Response> {
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;

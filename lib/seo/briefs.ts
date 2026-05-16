@@ -1,15 +1,15 @@
 // GET  /api/seo/briefs?projectId=...  -> list briefs
 // POST /api/seo/briefs  { projectId, keyword, pageUrl? }  -> generate + persist a brief
 
-import { decryptToken, serverClient } from "../../lib/supabase.js";
-import { requireAuth } from "../../lib/auth.js";
-import { json, badRequest } from "../../lib/validation.js";
-import { generateBrief } from "../../lib/briefs.js";
-import { keywordIdeas } from "../../lib/dataforseo.js";
+import { decryptToken, serverClient } from "../supabase.js";
+import { requireAuth } from "../auth.js";
+import { json, badRequest } from "../validation.js";
+import { generateBrief } from "../briefs.js";
+import { keywordIdeas } from "../dataforseo.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+export async function handle_briefs(req: Request): Promise<Response> {
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;
