@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSession } from "../lib/useSession";
 import { ensureSupabase } from "../lib/supabase";
+import { resetOnboarding } from "../lib/onboarding";
 import { useToast } from "../components/Toast";
 import { ExplainerBox } from "../components/learning/ExplainerBox";
 
@@ -29,6 +31,7 @@ const PLAN_LABEL: Record<"free" | "starter" | "pro", string> = {
 export default function Einstellungen() {
   const session = useSession();
   const toast = useToast();
+  const navigate = useNavigate();
   const [data, setData] = useState<SettingsData | null>(null);
   const [projects, setProjects] = useState<ProjectGsc[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -188,6 +191,25 @@ export default function Einstellungen() {
             {pwBusy ? "Wird gespeichert…" : "Passwort speichern"}
           </button>
         </form>
+
+        <div className="mt-6 border-t border-line pt-4">
+          <h3 className="text-sm font-medium text-ink">Tutorial neu starten</h3>
+          <p className="mt-1 text-xs text-ink-muted">
+            Zeigt die Onboarding-Tour erneut, wenn du das Dashboard aufrufst.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              resetOnboarding();
+              toast.push("info", "Tutorial wird neu gestartet.");
+              navigate("/dashboard");
+            }}
+            className="btn-ghost mt-2 text-sm"
+            data-testid="restart-tutorial-button"
+          >
+            Tutorial neu starten
+          </button>
+        </div>
 
         <div className="mt-6 border-t border-line pt-4">
           <h3 className="text-sm font-medium text-ink">Account löschen</h3>

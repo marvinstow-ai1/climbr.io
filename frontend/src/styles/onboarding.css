@@ -1,0 +1,242 @@
+/* ────────────────────────────────────────────────────────────────────────
+ * Climbr Onboarding — komplett angepasstes Shepherd.js Styling.
+ *
+ * Wir laden bewusst NICHT das `shepherd.js/dist/css/shepherd.css` (Reset),
+ * sondern stylen alles selbst. Damit bleibt das Tutorial 1:1 im
+ * Climbr-Look (Dark UI, Lime-Akzent, Glass-Borders).
+ *
+ * Spec aus dem Brief:
+ *   - Hintergrund: #1a1a1a
+ *   - Border: 1px solid #2a2a2a
+ *   - Text: #f0f0f0
+ *   - Primary-Button: #C8F135, Text #0f0f0f, font-weight 700
+ *   - Secondary-Button: transparent, border 1px solid #2a2a2a, Text #888
+ *   - Border-Radius: 14px
+ *   - Box-Shadow: 0 8px 32px rgba(0,0,0,0.6)
+ *   - Highlight-Ring: 2px solid #C8F135, bg rgba(200,241,53,0.1)
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* Overlay (verdunkelt + lässt das Target-Element durchscheinen). */
+.shepherd-modal-overlay-container {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 9997;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+}
+.shepherd-modal-overlay-container.shepherd-modal-is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.shepherd-modal-overlay-container svg {
+  width: 100%;
+  height: 100%;
+}
+.shepherd-modal-overlay-container path {
+  fill: rgba(0, 0, 0, 0.65);
+  fill-rule: evenodd;
+}
+
+/* Highlight-Ring um das hervorgehobene Element. Shepherd setzt
+   `.shepherd-target-click-disabled` und `[data-shepherd-step-id]`; wir
+   stylen jedes Element, das durch das Loch im Overlay sichtbar wird. */
+.shepherd-enabled.shepherd-target {
+  position: relative;
+  z-index: 9998;
+}
+.shepherd-enabled.shepherd-target::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 10px;
+  border: 2px solid #c8f135;
+  background: rgba(200, 241, 53, 0.1);
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  animation: climbr-shepherd-pulse 2s ease-in-out infinite;
+}
+@keyframes climbr-shepherd-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(200, 241, 53, 0.35); }
+  50%      { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(200, 241, 53, 0); }
+}
+
+/* Step-Container (das eigentliche Pop-over). */
+.shepherd-element {
+  position: absolute;
+  z-index: 9999;
+  max-width: 380px;
+  outline: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transform: translateY(4px);
+}
+.shepherd-element.shepherd-enabled {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.shepherd-element.climbr-shepherd {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  color: #f0f0f0;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* Pfeil (Floating-UI-typisch). */
+.shepherd-arrow,
+.shepherd-arrow::before {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: transparent;
+}
+.shepherd-arrow {
+  z-index: -1;
+}
+.shepherd-arrow::before {
+  content: "";
+  transform: rotate(45deg);
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+}
+.shepherd-element[data-popper-placement^="top"] > .shepherd-arrow      { bottom: -6px; }
+.shepherd-element[data-popper-placement^="bottom"] > .shepherd-arrow   { top: -6px; }
+.shepherd-element[data-popper-placement^="left"] > .shepherd-arrow     { right: -6px; }
+.shepherd-element[data-popper-placement^="right"] > .shepherd-arrow    { left: -6px; }
+
+/* Fortschrittsbalken (von onboarding.ts injiziert). */
+.climbr-shepherd-progress {
+  padding: 14px 18px 0;
+}
+.climbr-shepherd-progress__label {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.climbr-shepherd-progress__track {
+  height: 4px;
+  width: 100%;
+  background: #2a2a2a;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.climbr-shepherd-progress__bar {
+  height: 100%;
+  background: #c8f135;
+  border-radius: 999px;
+  transition: width 0.3s ease-out;
+}
+
+/* Header (Titel + Close-Icon). */
+.shepherd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 18px 0;
+  gap: 12px;
+}
+.shepherd-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin: 0;
+  line-height: 1.35;
+  flex: 1;
+}
+.shepherd-cancel-icon {
+  background: transparent;
+  border: 0;
+  color: #666;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background-color 0.15s;
+}
+.shepherd-cancel-icon:hover { color: #f0f0f0; background: rgba(255,255,255,0.05); }
+.shepherd-cancel-icon:focus-visible {
+  outline: 2px solid #c8f135;
+  outline-offset: 1px;
+}
+
+/* Body-Text. */
+.shepherd-text {
+  padding: 8px 18px 16px;
+  color: #c8c8c8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.shepherd-text p { margin: 0; }
+.shepherd-text p + p { margin-top: 8px; }
+
+/* Footer mit Buttons. */
+.shepherd-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 18px 16px;
+}
+
+.shepherd-button {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.05s;
+}
+.shepherd-button:active { transform: scale(0.98); }
+.shepherd-button:focus-visible {
+  outline: 2px solid #c8f135;
+  outline-offset: 2px;
+}
+
+.shepherd-button-primary {
+  background: #c8f135;
+  color: #0f0f0f;
+  font-weight: 700;
+  border-color: #c8f135;
+}
+.shepherd-button-primary:hover { background: #d6f55a; border-color: #d6f55a; }
+
+.shepherd-button-secondary {
+  background: transparent;
+  border-color: #2a2a2a;
+  color: #888;
+  font-weight: 500;
+}
+.shepherd-button-secondary:hover {
+  color: #f0f0f0;
+  border-color: #3a3a3a;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Sehr kleine Viewports: Step nimmt mehr Breite ein. */
+@media (max-width: 480px) {
+  .shepherd-element { max-width: calc(100vw - 24px); }
+}
+
+/* Reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .shepherd-enabled.shepherd-target::after,
+  .shepherd-element,
+  .climbr-shepherd-progress__bar {
+    animation: none !important;
+    transition: none !important;
+  }
+}

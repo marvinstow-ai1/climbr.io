@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { ensureSupabase } from "../../lib/supabase";
 import { useSession } from "../../lib/useSession";
+import { isOnboardingCompleted } from "../../lib/onboarding";
 import type { DashboardProject } from "../dashboard/types";
 import { Footer } from "./Footer";
 import { Sidebar } from "./Sidebar";
@@ -26,6 +27,23 @@ export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [projects, setProjects] = useState<DashboardProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+
+  // Onboarding-Tour beim ersten Dashboard-Besuch automatisch starten.
+  // Läuft nur, wenn (a) eingeloggt, (b) auf /dashboard und (c) nicht
+  // bereits abgeschlossen (LocalStorage). Shepherd wird dynamisch geladen,
+  // damit es nicht im initialen Bundle landet.
+  useEffect(() => {
+    if (session.loading || !session.token) return;
+    if (location.pathname !== "/dashboard") return;
+    if (isOnboardingCompleted()) return;
+    // Kurzer Delay: Dashboard muss erst rendern, damit Target-Elemente da sind.
+    const t = setTimeout(() => {
+      void import("../../lib/onboarding").then(({ startOnboarding }) =>
+        startOnboarding(),
+      );
+    }, 400);
+    return () => clearTimeout(t);
+  }, [session.loading, session.token, location.pathname]);
 
   useEffect(() => {
     if (session.loading || !session.token) {
