@@ -6,8 +6,7 @@
   "devCommand": "node -e \"require('http').createServer((q,r)=>{r.statusCode=204;r.end()}).listen(process.env.PORT)\"",
   "framework": null,
   "crons": [
-    { "path": "/api/cron/daily-rankings", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/cleanup-audits", "schedule": "0 4 * * *" }
+    { "path": "/api/cron/daily-rankings", "schedule": "0 3 * * *" }
   ],
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
