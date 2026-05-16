@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { reopenCookieBanner } from "../cookie/CookieBanner";
 
 export function Footer() {
   return (
@@ -11,6 +12,15 @@ export function Footer() {
         <Link to="/legal/datenschutz" className="hover:text-ink">Datenschutz</Link>
         <span aria-hidden="true">·</span>
         <Link to="/legal/agb" className="hover:text-ink">AGB</Link>
+        <span aria-hidden="true">·</span>
+        <button
+          type="button"
+          onClick={reopenCookieBanner}
+          className="hover:text-ink"
+          data-testid="footer-cookie-settings"
+        >
+          Cookie-Einstellungen
+        </button>
       </div>
     </footer>
   );

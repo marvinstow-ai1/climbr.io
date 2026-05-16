@@ -8,9 +8,13 @@ import Pricing from "./pages/Pricing";
 import ProjectNew from "./pages/ProjectNew";
 import ProjectDetail from "./pages/ProjectDetail";
 import Einstellungen from "./pages/Einstellungen";
+import Impressum from "./pages/legal/Impressum";
+import Datenschutz from "./pages/legal/Datenschutz";
+import AGB from "./pages/legal/AGB";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
 import { PublicShell } from "./components/layout/PublicShell";
+import { CookieBanner } from "./components/cookie/CookieBanner";
 
 export default function App() {
   return (
@@ -23,6 +27,9 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/audit/:id" element={<AuditReport />} />
+          <Route path="/legal/impressum" element={<Impressum />} />
+          <Route path="/legal/datenschutz" element={<Datenschutz />} />
+          <Route path="/legal/agb" element={<AGB />} />
         </Route>
 
         {/* Authed routes — AppShell (TopNav + Sidebar + Footer).
@@ -34,13 +41,11 @@ export default function App() {
           {/* Placeholder routes — implemented in later Phase-4 sections */}
           <Route path="/wiki" element={<PlaceholderPage title="SEO Wiki" hint="Wird in Bereich 5 implementiert." />} />
           <Route path="/einstellungen" element={<Einstellungen />} />
-          <Route path="/legal/impressum" element={<PlaceholderPage title="Impressum" hint="Wird in Bereich 4 implementiert." />} />
-          <Route path="/legal/datenschutz" element={<PlaceholderPage title="Datenschutz" hint="Wird in Bereich 4 implementiert." />} />
-          <Route path="/legal/agb" element={<PlaceholderPage title="AGB" hint="Wird in Bereich 4 implementiert." />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      <CookieBanner />
     </ToastProvider>
   );
 }
