@@ -11,6 +11,8 @@ import Einstellungen from "./pages/Einstellungen";
 import Impressum from "./pages/legal/Impressum";
 import Datenschutz from "./pages/legal/Datenschutz";
 import AGB from "./pages/legal/AGB";
+import WikiIndex from "./pages/wiki/WikiIndex";
+import WikiArticle from "./pages/wiki/WikiArticle";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
 import { PublicShell } from "./components/layout/PublicShell";
@@ -39,7 +41,8 @@ export default function App() {
           <Route path="/projects/new" element={<ProjectNew />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           {/* Placeholder routes — implemented in later Phase-4 sections */}
-          <Route path="/wiki" element={<PlaceholderPage title="SEO Wiki" hint="Wird in Bereich 5 implementiert." />} />
+          <Route path="/wiki" element={<WikiIndex />} />
+          <Route path="/wiki/:slug" element={<WikiArticle />} />
           <Route path="/einstellungen" element={<Einstellungen />} />
         </Route>
 
@@ -50,11 +53,3 @@ export default function App() {
   );
 }
 
-function PlaceholderPage({ title, hint }: { title: string; hint: string }) {
-  return (
-    <div className="mx-auto max-w-3xl px-6 py-12" data-testid="placeholder-page">
-      <h1 className="text-2xl font-bold text-ink">{title}</h1>
-      <p className="mt-2 text-slate2">{hint}</p>
-    </div>
-  );
-}
