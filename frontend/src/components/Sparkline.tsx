@@ -22,7 +22,7 @@ export default function Sparkline({ points, width = 120, height = 32, invert = t
         height={height}
         role="img"
         aria-label={label ?? "No ranking data yet"}
-        className="text-slate-300"
+        className="text-ink-subtle/40"
       >
         <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke="currentColor" strokeDasharray="3 3" />
       </svg>
@@ -59,10 +59,10 @@ export default function Sparkline({ points, width = 120, height = 32, invert = t
       height={height}
       role="img"
       aria-label={label ?? "Ranking trend"}
-      className="text-primary"
+      className="text-accent"
     >
       <path d={d.trim()} fill="none" stroke="currentColor" strokeWidth={1.5} />
-      {last && <circle cx={last.x} cy={last.y} r={2} fill="currentColor" />}
+      {last && <circle cx={last.x} cy={last.y} r={2.5} fill="currentColor" />}
     </svg>
   );
 }

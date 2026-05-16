@@ -80,15 +80,15 @@ export default function ProjectNew() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
-      <h1 className="text-3xl font-bold">Create project</h1>
-      <p className="mt-2 text-slate2">
+      <h1 className="text-3xl font-semibold tracking-tight text-ink">Create project</h1>
+      <p className="mt-2 text-sm text-ink-muted">
         Add an optional list of up to {FREE_KEYWORD_LIMIT} keywords to start
         tracking immediately. You can add more later.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         <div>
-          <label htmlFor="domain" className="block text-sm font-medium">
+          <label htmlFor="domain" className="block text-sm font-medium text-ink">
             Domain
           </label>
           <input
@@ -98,31 +98,32 @@ export default function ProjectNew() {
             inputMode="url"
             autoComplete="url"
             required
-            className="input mt-1"
+            className="input mt-2"
             placeholder="your-shop.com"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             aria-invalid={domainError !== null || !domainValid}
             aria-describedby="domain-help domain-error"
           />
-          <p id="domain-help" className="mt-1 text-xs text-slate2">
-            We'll strip https:// and www. for you. Normalized: <code>{normalized || "—"}</code>
+          <p id="domain-help" className="mt-2 text-xs text-ink-subtle">
+            We'll strip https:// and www. for you. Normalized:{" "}
+            <code className="rounded bg-white/[0.04] px-1 py-0.5 text-ink-muted">{normalized || "—"}</code>
           </p>
           {(domainError || !domainValid) && (
-            <p id="domain-error" className="mt-1 text-sm text-red-600">
+            <p id="domain-error" className="mt-2 text-sm text-red-400">
               {domainError ?? "Please enter a valid domain like example.com"}
             </p>
           )}
         </div>
 
         <fieldset>
-          <legend className="text-sm font-medium">
-            Starter keywords <span className="text-slate2 font-normal">(optional)</span>
+          <legend className="text-sm font-medium text-ink">
+            Starter keywords <span className="text-ink-subtle font-normal">(optional)</span>
           </legend>
-          <p className="mt-1 text-xs text-slate2">
+          <p className="mt-1 text-xs text-ink-subtle">
             {dedupedCount}/{FREE_KEYWORD_LIMIT} unique
           </p>
-          <ul className="mt-2 space-y-2">
+          <ul className="mt-3 space-y-2">
             {keywords.map((kw, i) => (
               <li key={i} className="flex gap-2">
                 <input
@@ -147,12 +148,12 @@ export default function ProjectNew() {
             ))}
           </ul>
           {keywords.length < FREE_KEYWORD_LIMIT && (
-            <button type="button" onClick={addKeywordRow} className="mt-2 text-sm text-primary hover:underline">
+            <button type="button" onClick={addKeywordRow} className="mt-3 text-sm text-accent underline-offset-4 hover:underline">
               + Add another keyword
             </button>
           )}
           {dedupedCount > FREE_KEYWORD_LIMIT && (
-            <p className="mt-1 text-sm text-red-600" role="alert">
+            <p className="mt-2 text-sm text-red-400" role="alert">
               Free plan tracks up to {FREE_KEYWORD_LIMIT} keywords. Upgrade to add more.
             </p>
           )}

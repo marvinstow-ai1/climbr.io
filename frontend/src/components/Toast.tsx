@@ -61,16 +61,19 @@ function ToastRail() {
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   const [enter, setEnter] = useState(false);
   useEffect(() => { setEnter(true); }, []);
-  const color = toast.kind === "success" ? "bg-green-600"
-    : toast.kind === "error" ? "bg-red-600"
-    : "bg-ink";
+  const tint =
+    toast.kind === "success"
+      ? "border-accent/30 bg-accent-dim text-accent"
+      : toast.kind === "error"
+      ? "border-red-500/30 bg-red-500/10 text-red-300"
+      : "border-line-strong bg-bg-elevated/90 text-ink";
   return (
     <div
-      className={`pointer-events-auto flex max-w-sm items-start gap-3 rounded-lg px-4 py-3 text-sm text-white shadow-lg transition ${color} ${enter ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
+      className={`pointer-events-auto flex max-w-sm items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-2xl backdrop-blur-xl transition-all ${tint} ${enter ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
       role={toast.kind === "error" ? "alert" : "status"}
     >
       <span className="flex-1">{toast.message}</span>
-      <button onClick={onDismiss} aria-label="Dismiss" className="opacity-80 hover:opacity-100">×</button>
+      <button onClick={onDismiss} aria-label="Dismiss" className="opacity-60 transition-opacity hover:opacity-100">×</button>
     </div>
   );
 }

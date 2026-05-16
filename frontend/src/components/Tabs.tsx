@@ -39,7 +39,7 @@ export default function Tabs({ tabs, initialId }: Props) {
 
   return (
     <div>
-      <div role="tablist" aria-orientation="horizontal" className="flex gap-1 border-b border-slate-200">
+      <div role="tablist" aria-orientation="horizontal" className="flex gap-1 border-b border-line">
         {tabs.map((t) => {
           const selected = t.id === active;
           return (
@@ -54,10 +54,10 @@ export default function Tabs({ tabs, initialId }: Props) {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(t.id)}
               onKeyDown={onKey}
-              className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition ${
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
                 selected
-                  ? "border-primary text-primary"
-                  : "border-transparent text-slate2 hover:text-ink"
+                  ? "border-accent text-ink"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               {t.label}

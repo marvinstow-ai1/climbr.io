@@ -21,14 +21,14 @@ export default function AuditReport() {
   if (error) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-12">
-        <p className="text-red-600">Error: {error}</p>
+        <p className="text-sm text-red-400">Error: {error}</p>
       </div>
     );
   }
   if (!audit) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-12">
-        <p className="text-slate2">Loading audit…</p>
+        <p className="text-sm text-ink-muted">Loading audit…</p>
       </div>
     );
   }
@@ -37,7 +37,7 @@ export default function AuditReport() {
   if (!report) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-12">
-        <p className="text-slate2">Status: {audit.status}. Report not yet ready.</p>
+        <p className="text-sm text-ink-muted">Status: {audit.status}. Report not yet ready.</p>
       </div>
     );
   }
@@ -45,46 +45,49 @@ export default function AuditReport() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-12 space-y-6">
       <header>
-        <p className="text-sm text-slate2">Audit for</p>
-        <h1 className="text-2xl font-bold break-all">{audit.url}</h1>
+        <p className="text-xs font-medium uppercase tracking-wider text-ink-muted">Audit for</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink break-all">{audit.url}</h1>
       </header>
 
-      <section className="card flex items-center justify-between">
+      <section className="card-elevated flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-slate2">SEO score</p>
-          <p className="text-5xl font-bold">{audit.score ?? report.score}<span className="text-xl text-slate2">/100</span></p>
+          <p className="text-xs font-medium uppercase tracking-wider text-ink-muted">SEO score</p>
+          <p className="mt-2 text-5xl font-semibold tracking-tight text-ink">
+            {audit.score ?? report.score}
+            <span className="text-2xl text-ink-subtle">/100</span>
+          </p>
         </div>
-        <div className="text-right text-xs text-slate2">
-          <p>Model: {report.model}</p>
-          <p>{new Date(report.generatedAt).toLocaleString()}</p>
+        <div className="text-right text-xs text-ink-subtle">
+          <p>{report.model}</p>
+          <p className="mt-0.5">{new Date(report.generatedAt).toLocaleString()}</p>
         </div>
       </section>
 
       <section className="card">
-        <p className="text-slate2">{report.summary}</p>
+        <p className="text-sm text-ink-muted">{report.summary}</p>
       </section>
 
       {report.quickWins.length > 0 && (
         <section className="card">
-          <h2 className="mb-3 text-lg font-semibold">Quick wins (≤ 10 min)</h2>
-          <ul className="list-disc space-y-1 pl-5 text-slate2">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-ink-muted">Quick wins (≤ 10 min)</h2>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-muted marker:text-accent">
             {report.quickWins.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
         </section>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Top fixes</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-ink-muted">Top fixes</h2>
         {report.topFixes.map((fix, i) => <FixCard key={i} fix={fix} />)}
       </section>
 
       {report.furtherReading.length > 0 && (
         <section className="card">
-          <h2 className="mb-3 text-lg font-semibold">Further reading</h2>
-          <ul className="space-y-1 text-sm">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-ink-muted">Further reading</h2>
+          <ul className="mt-3 space-y-1.5 text-sm">
             {report.furtherReading.map((r, i) => (
               <li key={i}>
-                <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-accent underline-offset-4 hover:underline">
                   {r.title}
                 </a>
               </li>
