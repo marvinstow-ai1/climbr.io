@@ -8,6 +8,8 @@ import Pricing from "./pages/Pricing";
 import ProjectNew from "./pages/ProjectNew";
 import ProjectDetail from "./pages/ProjectDetail";
 import Einstellungen from "./pages/Einstellungen";
+import PasswortVergessen from "./pages/PasswortVergessen";
+import PasswortNeu from "./pages/PasswortNeu";
 import Impressum from "./pages/legal/Impressum";
 import Datenschutz from "./pages/legal/Datenschutz";
 import AGB from "./pages/legal/AGB";
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/passwort-vergessen" element={<PasswortVergessen />} />
+          <Route path="/passwort-neu" element={<PasswortNeu />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/audit/:id" element={<AuditReport />} />
           <Route path="/legal/impressum" element={<Impressum />} />

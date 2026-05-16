@@ -35,12 +35,12 @@ export default function ProjectDetail() {
         .maybeSingle();
       if (error) throw error;
       if (!data) {
-        setError("Project not found or you don't have access.");
+        setError("Projekt nicht gefunden oder du hast keinen Zugriff.");
         return;
       }
       setProject(data as Project);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load project");
+      setError(e instanceof Error ? e.message : "Projekt konnte nicht geladen werden.");
     }
   }, [id]);
 
@@ -59,7 +59,7 @@ export default function ProjectDetail() {
       <div className="mx-auto max-w-4xl px-6 py-12">
         <p className="text-red-600" role="alert">{error}</p>
         <Link to="/dashboard" className="mt-4 inline-block text-primary underline">
-          Back to dashboard
+          Zurück zum Dashboard
         </Link>
       </div>
     );
@@ -68,7 +68,7 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-slate2">Loading project…</p>
+        <p className="text-slate2">Lade Projekt…</p>
       </div>
     );
   }
@@ -79,22 +79,22 @@ export default function ProjectDetail() {
     <div className="mx-auto max-w-4xl px-6 py-12">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-slate2">Project</p>
+          <p className="text-sm text-slate2">Projekt</p>
           <h1 className="text-3xl font-bold">{project.domain}</h1>
           <p className="mt-1 text-xs text-slate2">
-            Created {new Date(project.created_at).toLocaleDateString()}
+            Angelegt am {new Date(project.created_at).toLocaleDateString("de-DE")}
           </p>
         </div>
         {project.gsc_connected && (
           <span
             className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
-            title={project.gsc_connected_at ? `Last sync ${new Date(project.gsc_connected_at).toLocaleString()}` : undefined}
+            title={project.gsc_connected_at ? `Zuletzt synchronisiert ${new Date(project.gsc_connected_at).toLocaleString("de-DE")}` : undefined}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
-            GSC connected
+            GSC verbunden
             {project.gsc_connected_at && (
               <span className="text-green-600">
-                · {new Date(project.gsc_connected_at).toLocaleDateString()}
+                · {new Date(project.gsc_connected_at).toLocaleDateString("de-DE")}
               </span>
             )}
           </span>
@@ -130,7 +130,7 @@ export default function ProjectDetail() {
             },
             {
               id: "notifications",
-              label: "Notifications",
+              label: "Benachrichtigungen",
               content: (
                 <NotificationsTab
                   projectId={id}

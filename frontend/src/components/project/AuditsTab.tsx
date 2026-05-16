@@ -39,7 +39,7 @@ export default function AuditsTab({ projectId, domain, token, onNotify }: Props)
       if (error) throw error;
       setAudits((data ?? []) as AuditRow[]);
     } catch (e) {
-      onNotify("error", e instanceof Error ? e.message : "Failed to load audits");
+      onNotify("error", e instanceof Error ? e.message : "Audits konnten nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -52,16 +52,16 @@ export default function AuditsTab({ projectId, domain, token, onNotify }: Props)
     setRunning(true);
     try {
       await runProjectAudit(token, { url: urlInput.trim(), projectId });
-      onNotify("success", "Audit complete");
+      onNotify("success", "Audit fertig.");
       await load();
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr.code === "PLAN_LIMIT_REACHED") {
         onNotify("error", apiErr.message);
       } else if (apiErr.status === 429) {
-        onNotify("error", "Rate-limited. Please wait a minute and retry.");
+        onNotify("error", "Zu viele Anfragen. Bitte warte eine Minute und versuche es erneut.");
       } else {
-        onNotify("error", apiErr.message ?? "Audit failed");
+        onNotify("error", apiErr.message ?? "Audit fehlgeschlagen.");
       }
     } finally {
       setRunning(false);
@@ -72,7 +72,7 @@ export default function AuditsTab({ projectId, domain, token, onNotify }: Props)
     <div className="space-y-6">
       <form onSubmit={onRun} className="card flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <label htmlFor="audit-url" className="block text-sm font-medium">URL to audit</label>
+          <label htmlFor="audit-url" className="block text-sm font-medium">URL für Audit</label>
           <input
             id="audit-url"
             type="url"
@@ -85,30 +85,33 @@ export default function AuditsTab({ projectId, domain, token, onNotify }: Props)
           />
         </div>
         <button type="submit" className="btn-primary" disabled={running || !urlInput.trim()}>
-          {running ? "Auditing — grab a coffee ☕" : "Run new audit"}
+          {running ? "Wird analysiert — hol dir einen Kaffee ☕" : "Neuen Audit starten"}
         </button>
       </form>
 
       {loading ? (
-        <p className="text-slate2">Loading audits…</p>
+        <p className="text-slate2">Lade Audits…</p>
       ) : audits.length === 0 ? (
-        <p className="text-slate2">No audits yet. Run one above to get started.</p>
+        <p className="text-slate2">Noch keine Audits. Starte oben deinen ersten.</p>
       ) : (
         <ul className="space-y-2">
           {audits.map((a) => (
             <li key={a.id} className="card flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <Link to={`/audit/${a.id}`} className="font-medium text-primary hover:underline break-all">
+                <Link to={`/audit/${a.id}`} className="break-all font-medium text-primary hover:underline">
                   {a.url}
                 </Link>
                 <p className="text-xs text-slate2">
-                  {new Date(a.created_at).toLocaleString()} · {a.status}
+                  {new Date(a.created_at).toLocaleString("de-DE")} · {a.status}
                   {a.error && <span className="text-red-600"> — {a.error}</span>}
                 </p>
               </div>
               <div className="shrink-0 text-right">
                 {a.score != null ? (
-                  <span className="text-2xl font-bold">{a.score}<span className="text-sm text-slate2">/100</span></span>
+                  <span className="text-2xl font-bold">
+                    {a.score}
+                    <span className="text-sm text-slate2">/100</span>
+                  </span>
                 ) : (
                   <span className="text-sm text-slate2">—</span>
                 )}

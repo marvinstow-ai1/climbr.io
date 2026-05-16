@@ -53,7 +53,7 @@ export default function ProjectNew() {
     setDomainError(null);
     if (!session.token) return;
     if (!DOMAIN_RE.test(normalized)) {
-      setDomainError("Please enter a valid domain like example.com");
+      setDomainError("Bitte gib eine gültige Domain wie beispiel.de ein.");
       return;
     }
     setBusy(true);
@@ -62,16 +62,16 @@ export default function ProjectNew() {
         domain: normalized,
         keywords: filledKeywords,
       });
-      toast.push("success", "Project created");
+      toast.push("success", "Projekt angelegt.");
       nav(`/projects/${project.id}`);
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr.code === "DUPLICATE_PROJECT") {
-        setDomainError("You already have a project for that domain.");
+        setDomainError("Für diese Domain hast du schon ein Projekt.");
       } else if (apiErr.code === "PLAN_LIMIT_REACHED") {
         toast.push("error", apiErr.message);
       } else {
-        toast.push("error", apiErr.message ?? "Could not create project");
+        toast.push("error", apiErr.message ?? "Projekt konnte nicht angelegt werden.");
       }
     } finally {
       setBusy(false);
@@ -80,10 +80,10 @@ export default function ProjectNew() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-12">
-      <h1 className="text-3xl font-bold">Create project</h1>
+      <h1 className="text-3xl font-bold">Neues Projekt</h1>
       <p className="mt-2 text-slate2">
-        Add an optional list of up to {FREE_KEYWORD_LIMIT} keywords to start
-        tracking immediately. You can add more later.
+        Füge optional bis zu {FREE_KEYWORD_LIMIT} Keywords hinzu, um direkt
+        mit dem Tracking zu starten. Weitere kannst du später ergänzen.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
@@ -99,28 +99,30 @@ export default function ProjectNew() {
             autoComplete="url"
             required
             className="input mt-1"
-            placeholder="your-shop.com"
+            placeholder="dein-shop.de"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             aria-invalid={domainError !== null || !domainValid}
             aria-describedby="domain-help domain-error"
           />
           <p id="domain-help" className="mt-1 text-xs text-slate2">
-            We'll strip https:// and www. for you. Normalized: <code>{normalized || "—"}</code>
+            https:// und www. entfernen wir automatisch. Normalisiert:{" "}
+            <code>{normalized || "—"}</code>
           </p>
           {(domainError || !domainValid) && (
             <p id="domain-error" className="mt-1 text-sm text-red-600">
-              {domainError ?? "Please enter a valid domain like example.com"}
+              {domainError ?? "Bitte gib eine gültige Domain wie beispiel.de ein."}
             </p>
           )}
         </div>
 
         <fieldset>
           <legend className="text-sm font-medium">
-            Starter keywords <span className="text-slate2 font-normal">(optional)</span>
+            Start-Keywords{" "}
+            <span className="font-normal text-slate2">(optional)</span>
           </legend>
           <p className="mt-1 text-xs text-slate2">
-            {dedupedCount}/{FREE_KEYWORD_LIMIT} unique
+            {dedupedCount}/{FREE_KEYWORD_LIMIT} eindeutig
           </p>
           <ul className="mt-2 space-y-2">
             {keywords.map((kw, i) => (
@@ -129,7 +131,7 @@ export default function ProjectNew() {
                   type="text"
                   aria-label={`Keyword ${i + 1}`}
                   className="input"
-                  placeholder={i === 0 ? "leather backpack" : "another keyword"}
+                  placeholder={i === 0 ? "lederrucksack damen" : "weiteres keyword"}
                   value={kw}
                   maxLength={120}
                   onChange={(e) => setKeywordAt(i, e.target.value)}
@@ -138,32 +140,41 @@ export default function ProjectNew() {
                   type="button"
                   onClick={() => removeKeywordRow(i)}
                   className="btn-ghost"
-                  aria-label={`Remove keyword ${i + 1}`}
+                  aria-label={`Keyword ${i + 1} entfernen`}
                   disabled={keywords.length === 1 && !kw}
                 >
-                  Remove
+                  Entfernen
                 </button>
               </li>
             ))}
           </ul>
           {keywords.length < FREE_KEYWORD_LIMIT && (
-            <button type="button" onClick={addKeywordRow} className="mt-2 text-sm text-primary hover:underline">
-              + Add another keyword
+            <button
+              type="button"
+              onClick={addKeywordRow}
+              className="mt-2 text-sm text-primary hover:underline"
+            >
+              + Weiteres Keyword
             </button>
           )}
           {dedupedCount > FREE_KEYWORD_LIMIT && (
             <p className="mt-1 text-sm text-red-600" role="alert">
-              Free plan tracks up to {FREE_KEYWORD_LIMIT} keywords. Upgrade to add more.
+              Der kostenlose Plan erlaubt bis zu {FREE_KEYWORD_LIMIT} Keywords.
+              Im bezahlten Plan sind mehr möglich.
             </p>
           )}
         </fieldset>
 
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => nav("/dashboard")} className="btn-ghost">
-            Cancel
+          <button
+            type="button"
+            onClick={() => nav("/dashboard")}
+            className="btn-ghost"
+          >
+            Abbrechen
           </button>
           <button type="submit" className="btn-primary" disabled={!canSubmit}>
-            {busy ? "Creating…" : "Create project"}
+            {busy ? "Wird angelegt…" : "Projekt anlegen"}
           </button>
         </div>
       </form>
