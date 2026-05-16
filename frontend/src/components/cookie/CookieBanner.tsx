@@ -1,43 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { readConsent, writeConsent, REOPEN_EVENT } from "./consent";
 
-const STORAGE_KEY = "climbr_cookie_consent";
-
-type Consent = "accepted" | "rejected" | null;
-
-function readConsent(): Consent {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "accepted" || v === "rejected") return v;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function writeConsent(c: "accepted" | "rejected"): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, c);
-  } catch {
-    // ignore — localStorage might be disabled
-  }
-}
-
-/**
- * Triggert ein erneutes Anzeigen des Banners — wird vom Footer-Link
- * "Cookie-Einstellungen" gerufen.
- */
-export function reopenCookieBanner(): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // ignore
-  }
-  window.dispatchEvent(new CustomEvent("climbr:reopen-cookie-banner"));
-}
+export { reopenCookieBanner } from "./consent";
 
 /**
  * DSGVO-konformer Cookie-Banner. Kein Dark Pattern — beide Buttons sind
@@ -52,8 +17,8 @@ export function CookieBanner() {
     function onReopen() {
       setVisible(true);
     }
-    window.addEventListener("climbr:reopen-cookie-banner", onReopen);
-    return () => window.removeEventListener("climbr:reopen-cookie-banner", onReopen);
+    window.addEventListener(REOPEN_EVENT, onReopen);
+    return () => window.removeEventListener(REOPEN_EVENT, onReopen);
   }, []);
 
   if (!visible) return null;

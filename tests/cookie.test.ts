@@ -32,13 +32,13 @@ afterEach(() => { delete (globalThis as unknown as { window?: unknown }).window;
 
 describe("cookie consent", () => {
   it("starts out without a stored decision", async () => {
-    const mod = await import("../frontend/src/components/cookie/CookieBanner.js");
+    const mod = await import("../frontend/src/components/cookie/consent.js");
     expect(window.localStorage.getItem("climbr_cookie_consent")).toBeNull();
-    expect(typeof mod.CookieBanner).toBe("function");
+    expect(typeof mod.reopenCookieBanner).toBe("function");
   });
 
   it("reopenCookieBanner() clears the stored decision and fires the event", async () => {
-    const { reopenCookieBanner } = await import("../frontend/src/components/cookie/CookieBanner.js");
+    const { reopenCookieBanner } = await import("../frontend/src/components/cookie/consent.js");
     window.localStorage.setItem("climbr_cookie_consent", "accepted");
 
     let fired = false;
@@ -50,7 +50,7 @@ describe("cookie consent", () => {
   });
 
   it("reopenCookieBanner() is a no-op without window (SSR)", async () => {
-    const { reopenCookieBanner } = await import("../frontend/src/components/cookie/CookieBanner.js");
+    const { reopenCookieBanner } = await import("../frontend/src/components/cookie/consent.js");
     delete (globalThis as unknown as { window?: unknown }).window;
     expect(() => reopenCookieBanner()).not.toThrow();
   });
