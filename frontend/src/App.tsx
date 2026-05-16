@@ -7,6 +7,7 @@ import Signup from "./pages/Signup";
 import Pricing from "./pages/Pricing";
 import ProjectNew from "./pages/ProjectNew";
 import ProjectDetail from "./pages/ProjectDetail";
+import Einstellungen from "./pages/Einstellungen";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
 import { PublicShell } from "./components/layout/PublicShell";
@@ -32,7 +33,7 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           {/* Placeholder routes — implemented in later Phase-4 sections */}
           <Route path="/wiki" element={<PlaceholderPage title="SEO Wiki" hint="Wird in Bereich 5 implementiert." />} />
-          <Route path="/einstellungen" element={<PlaceholderPage title="Einstellungen" hint="Wird in Bereich 3 implementiert." />} />
+          <Route path="/einstellungen" element={<Einstellungen />} />
           <Route path="/legal/impressum" element={<PlaceholderPage title="Impressum" hint="Wird in Bereich 4 implementiert." />} />
           <Route path="/legal/datenschutz" element={<PlaceholderPage title="Datenschutz" hint="Wird in Bereich 4 implementiert." />} />
           <Route path="/legal/agb" element={<PlaceholderPage title="AGB" hint="Wird in Bereich 4 implementiert." />} />
