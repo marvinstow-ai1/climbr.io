@@ -35,12 +35,12 @@ export default function ProjectDetail() {
         .maybeSingle();
       if (error) throw error;
       if (!data) {
-        setError("Project not found or you don't have access.");
+        setError("Projekt nicht gefunden oder du hast keinen Zugriff.");
         return;
       }
       setProject(data as Project);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load project");
+      setError(e instanceof Error ? e.message : "Projekt konnte nicht geladen werden.");
     }
   }, [id]);
 
@@ -57,9 +57,9 @@ export default function ProjectDetail() {
   if (error) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-sm text-red-400" role="alert">{error}</p>
-        <Link to="/dashboard" className="mt-4 inline-block text-sm text-accent underline-offset-4 hover:underline">
-          Back to dashboard
+        <p className="text-red-400" role="alert">{error}</p>
+        <Link to="/dashboard" className="mt-4 inline-block text-accent underline">
+          Zurück zum Dashboard
         </Link>
       </div>
     );
@@ -68,7 +68,7 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-sm text-ink-muted">Loading project…</p>
+        <p className="text-ink-muted">Lade Projekt…</p>
       </div>
     );
   }
@@ -79,22 +79,22 @@ export default function ProjectDetail() {
     <div className="mx-auto max-w-4xl px-6 py-12">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-ink-muted">Project</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">{project.domain}</h1>
-          <p className="mt-1 text-xs text-ink-subtle">
-            Created {new Date(project.created_at).toLocaleDateString()}
+          <p className="text-sm text-ink-muted">Projekt</p>
+          <h1 className="text-3xl font-bold">{project.domain}</h1>
+          <p className="mt-1 text-xs text-ink-muted">
+            Angelegt am {new Date(project.created_at).toLocaleDateString("de-DE")}
           </p>
         </div>
         {project.gsc_connected && (
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent-dim px-3 py-1 text-xs font-medium text-accent backdrop-blur-md"
-            title={project.gsc_connected_at ? `Last sync ${new Date(project.gsc_connected_at).toLocaleString()}` : undefined}
+            className="inline-flex items-center gap-1 rounded-full bg-accent-dim px-3 py-1 text-xs font-medium text-accent"
+            title={project.gsc_connected_at ? `Zuletzt synchronisiert ${new Date(project.gsc_connected_at).toLocaleString("de-DE")}` : undefined}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-glow-sm" aria-hidden />
-            GSC connected
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
+            GSC verbunden
             {project.gsc_connected_at && (
-              <span className="text-accent/80">
-                · {new Date(project.gsc_connected_at).toLocaleDateString()}
+              <span className="text-accent">
+                · {new Date(project.gsc_connected_at).toLocaleDateString("de-DE")}
               </span>
             )}
           </span>
@@ -130,7 +130,7 @@ export default function ProjectDetail() {
             },
             {
               id: "notifications",
-              label: "Notifications",
+              label: "Benachrichtigungen",
               content: (
                 <NotificationsTab
                   projectId={id}

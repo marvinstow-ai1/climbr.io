@@ -83,6 +83,18 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  return json({ ok: true, processed, notifications });
+  // Nightly maintenance: prune old audits + anonymous IP log. Folded in
+  // here to stay under Vercel's 12-function Hobby limit.
+  const ttlDays = Number(process.env.AUDIT_TTL_DAYS ?? "180");
+  const cutoff = new Date(Date.now() - ttlDays * 24 * 60 * 60 * 1000).toISOString();
+  const { count: prunedAudits } = await db
+    .from("audits")
+    .delete({ count: "exact" })
+    .lt("created_at", cutoff);
+
+  const ipCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  await db.from("anon_audit_log").delete().lt("created_at", ipCutoff);
+
+  return json({ ok: true, processed, notifications, prunedAudits: prunedAudits ?? 0 });
 }
 

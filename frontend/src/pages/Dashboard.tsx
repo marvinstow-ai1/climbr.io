@@ -1,68 +1,49 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useOutletContext, useSearchParams } from "react-router-dom";
 import { ensureSupabase } from "../lib/supabase";
 import { useSession } from "../lib/useSession";
 import { useToast } from "../components/Toast";
+import type { AppShellContext } from "../components/layout/AppShell";
+import { OverviewCards } from "../components/dashboard/OverviewCards";
+import { ProjectTable } from "../components/dashboard/ProjectTable";
+import { EmptyDashboard } from "../components/dashboard/EmptyDashboard";
+import {
+  computeKeywordMovements,
+  pickLatestAudit,
+} from "../components/dashboard/metrics";
+import type {
+  DashboardAudit,
+  DashboardRanking,
+} from "../components/dashboard/types";
 
-interface Project {
-  id: string;
-  domain: string;
-  gsc_connected: boolean;
-  gsc_connected_at: string | null;
-  created_at: string;
-}
-
-const STATUS_COPY: Record<string, { kind: "ok" | "warn" | "err"; text: string }> = {
-  connected:        { kind: "ok",   text: "Google Search Console connected" },
-  denied:           { kind: "warn", text: "Connection cancelled — you declined the Google consent." },
-  bad_state:        { kind: "err",  text: "Connection link expired or invalid — please retry." },
-  bad_request:      { kind: "err",  text: "Missing required parameters from Google's callback." },
-  forbidden:        { kind: "err",  text: "Project ownership check failed." },
-  no_refresh_token: { kind: "err",  text: "Google did not return a refresh token. Revoke access in your Google Account and retry." },
-  no_property:      { kind: "warn", text: "We couldn't find a verified GSC property matching this project's domain." },
-  save_failed:      { kind: "err",  text: "Could not save the connection. Please retry." },
-  failed:           { kind: "err",  text: "Connection failed. Please retry." },
-};
-
-const BANNER_TINT: Record<"ok" | "warn" | "err", string> = {
-  ok:   "border-accent/20 bg-accent-dim text-accent",
-  warn: "border-amber-500/20 bg-amber-500/5 text-amber-300",
-  err:  "border-red-500/20 bg-red-500/5 text-red-300",
+const GSC_STATUS_COPY: Record<string, { kind: "ok" | "warn" | "err"; text: string }> = {
+  connected:        { kind: "ok",   text: "Google Search Console verbunden ✓" },
+  denied:           { kind: "warn", text: "Verbindung abgebrochen — du hast Googles Einwilligung verweigert." },
+  bad_state:        { kind: "err",  text: "Verbindungslink ist abgelaufen oder ungültig — bitte erneut versuchen." },
+  bad_request:      { kind: "err",  text: "Fehlende Parameter im Google-Callback." },
+  forbidden:        { kind: "err",  text: "Projekt-Berechtigung konnte nicht geprüft werden." },
+  no_refresh_token: { kind: "err",  text: "Google hat keinen Refresh-Token zurückgegeben. Bitte den Zugriff im Google-Konto widerrufen und erneut versuchen." },
+  no_property:      { kind: "warn", text: "Keine verifizierte GSC-Property für diese Domain gefunden." },
+  save_failed:      { kind: "err",  text: "Verbindung konnte nicht gespeichert werden. Bitte erneut versuchen." },
+  failed:           { kind: "err",  text: "Verbindung fehlgeschlagen. Bitte erneut versuchen." },
 };
 
 export default function Dashboard() {
   const session = useSession();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { projects, projectsLoading } = useOutletContext<AppShellContext>();
+  const [audits, setAudits] = useState<DashboardAudit[]>([]);
+  const [rankings, setRankings] = useState<DashboardRanking[]>([]);
+  const [keywordCounts, setKeywordCounts] = useState<Record<string, number>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busyProjectId, setBusyProjectId] = useState<string | null>(null);
 
   const gscStatus = params.get("gsc");
 
-  useEffect(() => {
-    if (session.loading) return;
-    if (!session.token) return;
-    void loadProjects();
-  }, [session.loading, session.token]);
-
-  async function loadProjects() {
-    try {
-      const sb = ensureSupabase();
-      const { data, error } = await sb
-        .from("projects")
-        .select("id, domain, gsc_connected, gsc_connected_at, created_at")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      setProjects(data as Project[]);
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Failed to load projects");
-    }
-  }
-
   async function connectGsc(projectId: string) {
     if (!session.token) return;
-    setBusyId(projectId);
+    setBusyProjectId(projectId);
     try {
       const res = await fetch(`/api/gsc/connect?projectId=${projectId}`, {
         method: "POST",
@@ -75,117 +56,133 @@ export default function Dashboard() {
       const { authorizeUrl } = (await res.json()) as { authorizeUrl: string };
       window.location.href = authorizeUrl;
     } catch (e) {
-      toast.push("error", e instanceof Error ? e.message : "Failed to start GSC connect");
-      setBusyId(null);
+      toast.push("error", e instanceof Error ? e.message : "GSC-Verbindung fehlgeschlagen.");
+      setBusyProjectId(null);
     }
   }
 
   async function disconnectGsc(projectId: string) {
     if (!session.token) return;
-    setBusyId(projectId);
+    setBusyProjectId(projectId);
     try {
       const res = await fetch(`/api/gsc/disconnect?projectId=${projectId}`, {
         method: "POST",
         headers: { authorization: `Bearer ${session.token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.push("info", "GSC disconnected");
-      await loadProjects();
+      toast.push("info", "GSC getrennt.");
+      window.location.reload();
     } catch (e) {
-      toast.push("error", e instanceof Error ? e.message : "Failed to disconnect");
+      toast.push("error", e instanceof Error ? e.message : "GSC konnte nicht getrennt werden.");
     } finally {
-      setBusyId(null);
+      setBusyProjectId(null);
     }
   }
 
-  if (!session.loading && !session.token) {
-    return <Navigate to="/login" replace state={{ next: "/dashboard" }} />;
-  }
+  useEffect(() => {
+    if (session.loading || !session.token) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const sb = ensureSupabase();
+        const [a, r, k] = await Promise.all([
+          sb
+            .from("audits")
+            .select("id, project_id, url, score, status, created_at")
+            .order("created_at", { ascending: false })
+            .limit(50),
+          sb
+            .from("rankings")
+            .select("project_id, keyword, position, recorded_at")
+            .order("recorded_at", { ascending: false })
+            .limit(500),
+          sb.from("keywords").select("project_id"),
+        ]);
 
-  const banner = gscStatus ? STATUS_COPY[gscStatus] : null;
+        if (cancelled) return;
+        if (a.error) throw a.error;
+        if (r.error) throw r.error;
+        if (k.error) throw k.error;
+
+        setAudits((a.data ?? []) as DashboardAudit[]);
+        setRankings((r.data ?? []) as DashboardRanking[]);
+
+        const counts: Record<string, number> = {};
+        for (const row of (k.data ?? []) as { project_id: string }[]) {
+          counts[row.project_id] = (counts[row.project_id] ?? 0) + 1;
+        }
+        setKeywordCounts(counts);
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session.loading, session.token]);
+
+  const latestAudit = useMemo(() => pickLatestAudit(audits), [audits]);
+  const movements = useMemo(() => computeKeywordMovements(rankings, 7), [rankings]);
+
+  const rows = useMemo(
+    () =>
+      projects.map((project) => ({
+        project,
+        latestAudit:
+          audits.find((a) => a.project_id === project.id && a.status === "complete") ?? null,
+        keywordCount: keywordCounts[project.id] ?? 0,
+      })),
+    [projects, audits, keywordCounts],
+  );
+
+  const banner = gscStatus ? GSC_STATUS_COPY[gscStatus] : null;
+
+  useEffect(() => {
+    if (banner) {
+      toast.push(banner.kind === "ok" ? "success" : banner.kind === "warn" ? "info" : "error", banner.text);
+      params.delete("gsc");
+      params.delete("projectId");
+      setParams(params, { replace: true });
+    }
+  }, [banner]);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
+    <div
+      className="mx-auto max-w-6xl px-4 py-8 sm:px-6"
+      data-testid="dashboard-page"
+    >
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">Dashboard</h1>
-        <Link to="/projects/new" className="btn-primary">+ New project</Link>
+        <h1 className="text-2xl font-bold text-ink sm:text-3xl">Dashboard</h1>
+        <Link to="/projects/new" className="btn-primary">+ Neues Projekt</Link>
       </div>
 
-      {banner && (
-        <div
-          className={`mt-6 rounded-lg border p-4 text-sm backdrop-blur-md ${BANNER_TINT[banner.kind]}`}
-          role="status"
-        >
-          <div className="flex items-center justify-between gap-4">
-            <span>{banner.text}</span>
-            <button
-              onClick={() => { params.delete("gsc"); params.delete("projectId"); setParams(params); }}
-              className="text-xs text-ink-muted underline-offset-4 hover:underline"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
+      {loadError && (
+        <p className="mt-4 text-sm text-red-400" role="alert">
+          {loadError}
+        </p>
       )}
 
-      {loadError && <p className="mt-4 text-sm text-red-400" role="alert">{loadError}</p>}
+      <section className="mt-6">
+        <OverviewCards
+          projects={projects}
+          latestAudit={latestAudit}
+          movements={movements}
+        />
+      </section>
 
-      <section className="mt-10">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-ink-muted">Projects</h2>
-        {session.loading ? (
-          <p className="mt-3 text-sm text-ink-muted">Loading…</p>
+      <section className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold text-ink">Deine Projekte</h2>
+        {projectsLoading ? (
+          <p className="text-ink-muted">Lade…</p>
         ) : projects.length === 0 ? (
-          <div className="card mt-4">
-            <p className="text-sm text-ink-muted">
-              No projects yet. Create one to start running audits and tracking rankings.
-            </p>
-            <Link to="/projects/new" className="btn-primary mt-4 inline-block">Create your first project</Link>
-          </div>
+          <EmptyDashboard />
         ) : (
-          <ul className="mt-4 space-y-2">
-            {projects.map((p) => (
-              <li key={p.id} className="card flex items-center justify-between gap-4 transition-colors hover:bg-white/[0.05]">
-                <div className="min-w-0 flex-1">
-                  <Link to={`/projects/${p.id}`} className="font-medium text-ink hover:text-accent transition-colors">
-                    {p.domain}
-                  </Link>
-                  <p className="mt-1 text-xs text-ink-muted">
-                    {p.gsc_connected ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-glow-sm" aria-hidden />
-                        GSC connected
-                        {p.gsc_connected_at && (
-                          <span className="text-ink-subtle"> · last sync {new Date(p.gsc_connected_at).toLocaleDateString()}</span>
-                        )}
-                      </span>
-                    ) : (
-                      <span className="text-ink-subtle">GSC not connected</span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {p.gsc_connected ? (
-                    <button
-                      onClick={() => disconnectGsc(p.id)}
-                      className="btn-ghost"
-                      disabled={busyId === p.id}
-                    >
-                      {busyId === p.id ? "…" : "Disconnect"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => connectGsc(p.id)}
-                      className="btn-ghost"
-                      disabled={busyId === p.id}
-                    >
-                      {busyId === p.id ? "Redirecting…" : "Connect GSC"}
-                    </button>
-                  )}
-                  <Link to={`/projects/${p.id}`} className="btn-primary">Open</Link>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <ProjectTable
+            rows={rows}
+            busyProjectId={busyProjectId}
+            onConnectGsc={connectGsc}
+            onDisconnectGsc={disconnectGsc}
+          />
         )}
       </section>
     </div>

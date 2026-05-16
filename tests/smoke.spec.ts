@@ -264,31 +264,31 @@ test.describe("climbr.io smoke", () => {
     // (b) The dashboard route requires auth; the injected session should keep
     // us on /projects/new instead of redirecting to /login.
     await expect(page).toHaveURL(/\/projects\/new$/, { timeout: 10_000 });
-    await expect(page.getByRole("heading", { name: /create project/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /neues projekt/i })).toBeVisible();
 
     await screenshot(page, "new-project-form.png");
 
     // (c) Fill the form.
     await page.getByLabel(/domain/i).fill(TEST_DOMAIN);
     for (let i = 0; i < TEST_KEYWORDS.length; i++) {
-      // The form starts with one input (i=0). Subsequent rows need the "Add another keyword" click.
-      if (i > 0) await page.getByRole("button", { name: /add another keyword/i }).click();
+      // The form starts with one input (i=0). Subsequent rows need the "Weiteres Keyword" click.
+      if (i > 0) await page.getByRole("button", { name: /weiteres keyword/i }).click();
       await page.getByLabel(new RegExp(`^Keyword ${i + 1}$`, "i")).fill(TEST_KEYWORDS[i]!);
     }
-    await page.getByRole("button", { name: /^create project$/i }).click();
+    await page.getByRole("button", { name: /^projekt anlegen$/i }).click();
 
     // (d) Redirect to /projects/[id] and toast appears.
     await expect(page).toHaveURL(new RegExp(`/projects/${TEST_PROJECT_ID}$`), { timeout: 10_000 });
-    await expect(page.getByText(/project created/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/projekt angelegt/i)).toBeVisible({ timeout: 5_000 });
     await expect(page.getByRole("heading", { name: new RegExp(TEST_DOMAIN, "i") })).toBeVisible();
 
     await screenshot(page, "project-page-after-create.png");
 
     // (e) Run a new audit from the Audits tab (it's the default tab).
-    await page.getByRole("button", { name: /run new audit/i }).click();
+    await page.getByRole("button", { name: /neuen audit starten/i }).click();
     // Score badge appears in the audit row once /api/audit/run resolves.
     await expect(page.getByText(`${openaiMock.score}`).first()).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(/audit complete/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/audit fertig/i)).toBeVisible({ timeout: 5_000 });
 
     await screenshot(page, "audit-result.png");
 
@@ -303,5 +303,33 @@ test.describe("climbr.io smoke", () => {
     expect(await sparklines.count()).toBeGreaterThanOrEqual(TEST_KEYWORDS.length);
 
     await screenshot(page, "rankings-tab.png");
+
+    // (g) Dashboard shell (Phase 4 Bereich 1): nav, sidebar, overview cards,
+    // and the project we just created appears in the table.
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("dashboard-page")).toBeVisible();
+    await expect(page.getByTestId("overview-cards")).toBeVisible();
+    await expect(page.getByTestId("latest-audit-score")).toContainText(`${openaiMock.score}`);
+    await expect(page.getByTestId("project-table")).toBeVisible();
+    await expect(page.getByTestId("project-table").getByText(TEST_DOMAIN)).toBeVisible();
+    // The sidebar links to the same project.
+    await expect(page.getByTestId("sidebar").getByRole("link", { name: TEST_DOMAIN })).toBeVisible();
+
+    await screenshot(page, "dashboard-redesigned.png");
+  });
+
+  test("dashboard empty state when user has no projects", async ({ page }) => {
+    const state = freshState();
+    await injectSession(page);
+    await setupMocks(page, state);
+
+    page.on("pageerror", (err) => console.log("[browser:pageerror]", err.message));
+
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("dashboard-page")).toBeVisible();
+    await expect(page.getByTestId("empty-dashboard")).toBeVisible();
+    await expect(page.getByRole("link", { name: /erstes projekt anlegen/i })).toBeVisible();
+
+    await screenshot(page, "dashboard-empty.png");
   });
 });
