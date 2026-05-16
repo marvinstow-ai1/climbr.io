@@ -189,7 +189,10 @@ export default function Dashboard() {
             />
           </section>
 
-          <section className="mt-4 rounded-xl border border-accent/30 bg-accent-dim p-5">
+          <section
+            className="mt-4 rounded-xl border border-accent/30 bg-accent-dim p-5"
+            data-testid="seo-workflow-cta"
+          >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold text-ink">SEO-Workflow starten</h2>
@@ -263,7 +266,11 @@ function DashboardHeader() {
             <path d="M9 3a6 6 0 014.47 10.03l3.25 3.25-1.42 1.41-3.24-3.25A6 6 0 119 3zm0 2a4 4 0 100 8 4 4 0 000-8z" />
           </svg>
         </label>
-        <Link to="/projects/new" className="btn-primary h-9 px-4 py-2 text-sm">
+        <Link
+          to="/projects/new"
+          className="btn-primary h-9 px-4 py-2 text-sm"
+          data-testid="header-new-project"
+        >
           + Neues Projekt
         </Link>
       </div>
