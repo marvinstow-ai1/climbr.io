@@ -31,14 +31,6 @@ const PROVIDERS: ProviderConfig[] = [
     inputPlaceholder: "",
   },
   {
-    provider: "dataforseo",
-    name: "DataForSEO",
-    description: "Suchvolumen und verwandte Keywords für den DACH-Raum. Ohne Verbindung werden Beispieldaten genutzt.",
-    inputLabel: "Zugangsdaten (login:password)",
-    inputType: "password",
-    inputPlaceholder: "deine_login:dein_passwort",
-  },
-  {
     provider: "openai",
     name: "OpenAI",
     description: "Generiert Content-Briefings auf Basis deiner SEO-Daten. Eigenen Key hinterlegen oder den Server-Key nutzen.",
@@ -144,7 +136,27 @@ function IntegrationsBody() {
           }}
         />
       ))}
+      <DataForSeoServerCard status={byProvider.get("dataforseo") ?? null} />
     </div>
+  );
+}
+
+function DataForSeoServerCard({ status }: { status: IntegrationStatus | null }) {
+  const connected = status?.status === "connected";
+  return (
+    <article className="rounded-lg border border-line bg-bg-raised/60 p-5">
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">Keyword-Daten</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Suchvolumen und verwandte Keywords liefert climbr.io zentral – keine
+            Konfiguration nötig. Wird automatisch im Briefing-Generator und bei der
+            Chancen-Analyse genutzt.
+          </p>
+        </div>
+        <StatusPill status={connected ? "connected" : "disconnected"} />
+      </header>
+    </article>
   );
 }
 

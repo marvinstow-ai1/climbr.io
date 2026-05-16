@@ -40,20 +40,10 @@ export default async function handler(req: Request): Promise<Response> {
       return json({ error: { message: "forbidden" } }, { status: 403 });
     }
 
-    // Pull related keywords from DataForSEO (if configured) for grounding.
+    // Pull related keywords from DataForSEO (server-side credentials only).
     let related: { keyword: string; searchVolume?: number | null }[] = [];
-    const { data: dfsRow } = await db
-      .from("integrations")
-      .select("credentials_enc, status")
-      .eq("user_id", ctx.userId)
-      .eq("provider", "dataforseo")
-      .maybeSingle();
-    let dfsCreds: string | null = null;
-    if (dfsRow?.credentials_enc) {
-      try { dfsCreds = await decryptToken(dfsRow.credentials_enc); } catch { dfsCreds = null; }
-    }
     try {
-      const ideas = await keywordIdeas(body.keyword, "de", { credentials: dfsCreds });
+      const ideas = await keywordIdeas(body.keyword, "de");
       related = ideas.slice(0, 8).map((k) => ({ keyword: k.keyword, searchVolume: k.searchVolume }));
     } catch {
       related = [];

@@ -1,12 +1,12 @@
 // DataForSEO API client.
-// Edge-runtime safe. Mockable via MOCK_DATAFORSEO=true (default when no
-// credentials are present). Used by the Opportunity Finder and the Brief
+// Edge-runtime safe. Credentials are loaded server-side from environment
+// variables (`DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD`) — never exposed to
+// the client, never per-user. Used by the Opportunity Finder and the Brief
 // Generator for related-keyword / search-volume lookups.
 //
-// The DataForSEO Sandbox uses HTTP Basic auth: `login:password` base64.
-// We store the joined `login:password` string encrypted at rest in the
-// `integrations.credentials_enc` column and pass it as the basic-auth
-// secret here at request time.
+// Falls back to a deterministic mock dataset when:
+//   - MOCK_DATAFORSEO=true, OR
+//   - env credentials are missing.
 
 export interface KeywordIdea {
   keyword: string;
@@ -16,16 +16,21 @@ export interface KeywordIdea {
 }
 
 export interface DataForSeoOptions {
-  /** "login:password" — caller is responsible for decryption. */
-  credentials?: string | null;
   fetchImpl?: typeof fetch;
 }
 
 const ENDPOINT_LIVE = "https://api.dataforseo.com";
 
-function isMock(opts: DataForSeoOptions): boolean {
+export function serverCredentials(): string | null {
+  const login = process.env.DATAFORSEO_LOGIN;
+  const password = process.env.DATAFORSEO_PASSWORD;
+  if (!login || !password) return null;
+  return `${login}:${password}`;
+}
+
+function isMock(creds: string | null): boolean {
   if ((process.env.MOCK_DATAFORSEO ?? "").toLowerCase() === "true") return true;
-  return !opts.credentials || opts.credentials.indexOf(":") < 0;
+  return !creds || creds.indexOf(":") < 0;
 }
 
 function basicAuth(credentials: string): string {
@@ -39,7 +44,8 @@ export async function keywordIdeas(
   location: "de" | "at" | "ch" = "de",
   opts: DataForSeoOptions = {},
 ): Promise<KeywordIdea[]> {
-  if (isMock(opts)) return mockKeywordIdeas(seed);
+  const creds = serverCredentials();
+  if (isMock(creds)) return mockKeywordIdeas(seed);
 
   const fetchImpl = opts.fetchImpl ?? fetch;
   const body = [
@@ -53,7 +59,7 @@ export async function keywordIdeas(
   const r = await fetchImpl(`${ENDPOINT_LIVE}/v3/keywords_data/google_ads/keywords_for_keywords/live`, {
     method: "POST",
     headers: {
-      authorization: basicAuth(opts.credentials!),
+      authorization: basicAuth(creds!),
       "content-type": "application/json",
     },
     body: JSON.stringify(body),
@@ -71,17 +77,19 @@ export async function keywordIdeas(
   }));
 }
 
-// ---------- credential test ----------
+// ---------- server-side connection check ----------
 
-export async function pingDataForSeo(credentials: string, opts: { fetchImpl?: typeof fetch } = {}): Promise<boolean> {
+export async function pingServerDataForSeo(opts: { fetchImpl?: typeof fetch } = {}): Promise<{ ok: boolean; configured: boolean }> {
+  const creds = serverCredentials();
+  if (!creds) return { ok: false, configured: false };
   const fetchImpl = opts.fetchImpl ?? fetch;
   try {
     const r = await fetchImpl(`${ENDPOINT_LIVE}/v3/appendix/user_data`, {
-      headers: { authorization: basicAuth(credentials) },
+      headers: { authorization: basicAuth(creds) },
     });
-    return r.ok;
+    return { ok: r.ok, configured: true };
   } catch {
-    return false;
+    return { ok: false, configured: true };
   }
 }
 

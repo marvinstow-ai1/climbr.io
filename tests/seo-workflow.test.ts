@@ -72,12 +72,14 @@ describe("generateBrief (mock OpenAI)", () => {
   });
 });
 
-describe("dataforseo keywordIdeas (mock)", () => {
+describe("dataforseo keywordIdeas (server-side, mock fallback)", () => {
   beforeEach(() => {
     process.env.MOCK_DATAFORSEO = "true";
+    delete process.env.DATAFORSEO_LOGIN;
+    delete process.env.DATAFORSEO_PASSWORD;
   });
 
-  it("returns at least 10 mock ideas for a seed keyword", async () => {
+  it("returns at least 10 mock ideas when no server credentials are set", async () => {
     const ideas = await keywordIdeas("friseur");
     expect(ideas.length).toBeGreaterThanOrEqual(10);
     expect(ideas[0]!.keyword.startsWith("friseur")).toBe(true);

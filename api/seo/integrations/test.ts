@@ -5,7 +5,7 @@
 import { decryptToken, serverClient } from "../../../lib/supabase.js";
 import { requireAuth } from "../../../lib/auth.js";
 import { json, badRequest } from "../../../lib/validation.js";
-import { pingDataForSeo } from "../../../lib/dataforseo.js";
+import { pingServerDataForSeo } from "../../../lib/dataforseo.js";
 
 export const config = { runtime: "nodejs" };
 
@@ -34,6 +34,18 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ ok, message: ok ? "GSC-Verbindung erkannt." : "Keine verbundenen GSC-Properties gefunden." });
   }
 
+  if (provider === "dataforseo") {
+    const res = await pingServerDataForSeo();
+    if (!res.configured) {
+      return json({ ok: false, message: "DataForSEO ist serverseitig nicht konfiguriert." });
+    }
+    return json({
+      ok: res.ok,
+      message: res.ok ? "DataForSEO-Verbindung OK." : "DataForSEO antwortet nicht – Server-Zugangsdaten prüfen.",
+    });
+  }
+
+  // provider === "openai"
   const { data: row } = await db
     .from("integrations")
     .select("credentials_enc")
@@ -41,7 +53,7 @@ export default async function handler(req: Request): Promise<Response> {
     .eq("provider", provider)
     .maybeSingle();
   if (!row?.credentials_enc) {
-    if (provider === "openai" && process.env.OPENAI_API_KEY) {
+    if (process.env.OPENAI_API_KEY) {
       return json({ ok: true, message: "Server-seitiger OpenAI-Key aktiv." });
     }
     return json({ ok: false, message: "Keine Zugangsdaten gespeichert." }, { status: 400 });
@@ -51,17 +63,12 @@ export default async function handler(req: Request): Promise<Response> {
   let message = "";
   try {
     const plain = await decryptToken(row.credentials_enc);
-    if (provider === "dataforseo") {
-      ok = await pingDataForSeo(plain);
-      message = ok ? "DataForSEO-Verbindung OK." : "DataForSEO antwortet nicht – Zugangsdaten prüfen.";
-    } else {
-      const r = await fetch("https://api.openai.com/v1/models", {
-        headers: { authorization: `Bearer ${plain}` },
-        signal: AbortSignal.timeout(8000),
-      });
-      ok = r.ok;
-      message = ok ? "OpenAI-Verbindung OK." : `OpenAI antwortet mit ${r.status}.`;
-    }
+    const r = await fetch("https://api.openai.com/v1/models", {
+      headers: { authorization: `Bearer ${plain}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    ok = r.ok;
+    message = ok ? "OpenAI-Verbindung OK." : `OpenAI antwortet mit ${r.status}.`;
   } catch (e) {
     ok = false;
     message = e instanceof Error ? e.message : "Test fehlgeschlagen.";

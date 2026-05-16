@@ -5,12 +5,14 @@
 // DELETE /api/seo/integrations?provider=... -> disconnect provider
 //
 // Connection-testing happens in `./integrations/test.ts`.
-// GSC status is derived from the projects table (per-project OAuth).
-// DataForSEO + OpenAI live in the per-user integrations table.
+// GSC  : per-project OAuth (projects table)
+// OpenAI: per-user encrypted key (integrations table) — server env-fallback
+// DataForSEO: SERVER-SIDE only. Never accepted from the client.
 
 import { serverClient, encryptToken } from "../../lib/supabase.js";
 import { requireAuth } from "../../lib/auth.js";
 import { json, badRequest } from "../../lib/validation.js";
+import { serverCredentials as dataForSeoServerCreds } from "../../lib/dataforseo.js";
 
 export const config = { runtime: "nodejs" };
 
@@ -48,6 +50,9 @@ export default async function handler(req: Request): Promise<Response> {
         { status: 400 },
       );
     }
+    if (provider === "dataforseo") {
+      return badRequest("DataForSEO wird serverseitig konfiguriert und kann nicht per Benutzer getrennt werden.");
+    }
     await db.from("integrations").delete().eq("user_id", ctx.userId).eq("provider", provider);
     return json({ ok: true });
   }
@@ -72,22 +77,17 @@ async function getStatuses(userId: string, db: ReturnType<typeof serverClient>):
     meta: { connectedProjects: connectedGsc.length },
   });
 
-  for (const provider of ["dataforseo", "openai"] as const) {
-    const row = (integrations.data ?? []).find((r) => r.provider === provider);
-    statuses.push({
-      provider,
-      status: (row?.status as IntegrationStatus["status"]) ?? "disconnected",
-      last_tested_at: row?.last_tested_at ?? null,
-      last_error: row?.last_error ?? null,
-      meta: row?.meta ?? {},
-    });
-  }
-
-  // OpenAI server-key fallback: if the server has OPENAI_API_KEY set and the
-  // user hasn't configured their own, surface it as "connected (server-side)".
-  if (!statuses.find((s) => s.provider === "openai" && s.status === "connected") && process.env.OPENAI_API_KEY) {
-    const idx = statuses.findIndex((s) => s.provider === "openai");
-    statuses[idx] = {
+  // OpenAI: per-user row, with server-env fallback.
+  const openaiRow = (integrations.data ?? []).find((r) => r.provider === "openai");
+  let openaiStatus: IntegrationStatus = {
+    provider: "openai",
+    status: (openaiRow?.status as IntegrationStatus["status"]) ?? "disconnected",
+    last_tested_at: openaiRow?.last_tested_at ?? null,
+    last_error: openaiRow?.last_error ?? null,
+    meta: openaiRow?.meta ?? {},
+  };
+  if (openaiStatus.status !== "connected" && process.env.OPENAI_API_KEY) {
+    openaiStatus = {
       provider: "openai",
       status: "connected",
       last_tested_at: null,
@@ -95,6 +95,17 @@ async function getStatuses(userId: string, db: ReturnType<typeof serverClient>):
       meta: { source: "server" },
     };
   }
+  statuses.push(openaiStatus);
+
+  // DataForSEO: server-managed. Status reflects env configuration only —
+  // no per-user row, no credentials_enc.
+  statuses.push({
+    provider: "dataforseo",
+    status: dataForSeoServerCreds() ? "connected" : "disconnected",
+    last_tested_at: null,
+    last_error: null,
+    meta: { source: "server" },
+  });
 
   return json({ integrations: statuses });
 }
@@ -106,16 +117,15 @@ async function saveCredentials(req: Request, userId: string, db: ReturnType<type
   } catch {
     return badRequest("invalid JSON body");
   }
-  if (!body.provider || !isProvider(body.provider)) return badRequest("provider must be 'dataforseo' or 'openai'");
+  if (!body.provider || !isProvider(body.provider)) return badRequest("provider must be 'openai'");
   if (body.provider === "gsc") return badRequest("GSC wird pro Projekt verbunden");
+  if (body.provider === "dataforseo") {
+    return badRequest("DataForSEO wird serverseitig konfiguriert und kann nicht im UI hinterlegt werden.");
+  }
   if (!body.credentials || body.credentials.length < 8 || body.credentials.length > 4096) {
     return badRequest("credentials missing or invalid");
   }
 
-  // For DataForSEO we expect "login:password"; for OpenAI we expect a key.
-  if (body.provider === "dataforseo" && !body.credentials.includes(":")) {
-    return badRequest("DataForSEO erwartet das Format login:password");
-  }
   if (body.provider === "openai" && !body.credentials.startsWith("sk-")) {
     return badRequest("OpenAI API-Key beginnt mit sk-");
   }
