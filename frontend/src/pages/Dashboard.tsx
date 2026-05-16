@@ -189,6 +189,22 @@ export default function Dashboard() {
             />
           </section>
 
+          <section className="mt-4 rounded-xl border border-accent/30 bg-accent-dim p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-ink">SEO-Workflow starten</h2>
+                <p className="mt-1 text-sm text-ink-muted">
+                  Verbindungen prüfen, Chancen entdecken, Aufgaben abarbeiten —
+                  alles in einem geführten Monatsplan.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link to="/seo/workflow" className="btn-primary text-sm">Monatsplan öffnen</Link>
+                <Link to="/seo" className="btn-ghost text-sm">Verbindungen</Link>
+              </div>
+            </div>
+          </section>
+
           <section className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <VisibilityTrend rankings={rankings} />

@@ -1,28 +1,58 @@
 /**
- * GET /api/settings — Account-Übersicht für die Einstellungen-Seite.
+ * /api/settings — Account-Endpoint (kombiniert auf einer Vercel-Function).
  *
- * Liefert Profil (E-Mail), aktuellen Plan + Limits, aktuelle Verbrauchs-
- * werte (Anzahl Projekte, Audits diesen Monat) und die Benachrichtigungs-
- * einstellungen. Die `settings`-Tabelle existiert bereits seit
- * 0001_init.sql — keine neue Migration nötig.
+ *   GET   /api/settings                 -> Profil + Plan + Verbrauch + Notifications
+ *   PATCH /api/settings/notifications   -> togelt email_notifications
+ *
+ * Die `/notifications`-URL wird per `vercel.json`-rewrite auf diese Function
+ * geroutet, dispatched wird über Methode + Pfad. So bleibt die öffentliche
+ * URL stabil, ohne dass wir am Hobby-Plan-Function-Limit anschlagen.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { serverClient } from "../lib/supabase.js";
 import { requireAuth } from "../lib/auth.js";
 import { limitsFor } from "../lib/plans.js";
-import { json } from "../lib/validation.js";
+import { badRequest, json } from "../lib/validation.js";
 
 export const config = { runtime: "nodejs" };
 
+const NotificationsInput = z.object({
+  email_notifications: z.boolean(),
+});
+
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== "GET") {
-    return json({ error: { message: "method not allowed" } }, { status: 405 });
-  }
+  const url = new URL(req.url);
+  const sub = url.searchParams.get("_sub");
+  const isNotifications = sub === "notifications" || url.pathname.endsWith("/notifications");
 
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;
+
+  if (isNotifications) {
+    if (req.method !== "PATCH") {
+      return json({ error: { message: "method not allowed" } }, { status: 405 });
+    }
+    let body: unknown;
+    try { body = await req.json(); } catch { return badRequest("invalid JSON body"); }
+    const parsed = NotificationsInput.safeParse(body);
+    if (!parsed.success) return badRequest("invalid input", parsed.error.flatten());
+
+    const { error } = await db
+      .from("settings")
+      .upsert(
+        { user_id: ctx.userId, email_notifications: parsed.data.email_notifications },
+        { onConflict: "user_id" },
+      );
+    if (error) return json({ error: { message: error.message } }, { status: 500 });
+    return json({ email_notifications: parsed.data.email_notifications });
+  }
+
+  if (req.method !== "GET") {
+    return json({ error: { message: "method not allowed" } }, { status: 405 });
+  }
 
   const limits = limitsFor(ctx.plan);
 

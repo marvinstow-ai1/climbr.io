@@ -15,6 +15,13 @@ import Datenschutz from "./pages/legal/Datenschutz";
 import AGB from "./pages/legal/AGB";
 import WikiIndex from "./pages/wiki/WikiIndex";
 import WikiArticle from "./pages/wiki/WikiArticle";
+import SeoIntegrations from "./pages/seo/SeoIntegrations";
+import SeoWorkflow from "./pages/seo/SeoWorkflow";
+import SeoOpportunities from "./pages/seo/SeoOpportunities";
+import SeoTasks from "./pages/seo/SeoTasks";
+import SeoBriefs from "./pages/seo/SeoBriefs";
+import SeoLocal from "./pages/seo/SeoLocal";
+import SeoReports from "./pages/seo/SeoReports";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
 import { PublicShell } from "./components/layout/PublicShell";
@@ -49,6 +56,14 @@ export default function App() {
           <Route path="/projects/new" element={<ProjectNew />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/einstellungen" element={<Einstellungen />} />
+          {/* SEO workflow (Phase 5) */}
+          <Route path="/seo" element={<SeoIntegrations />} />
+          <Route path="/seo/workflow" element={<SeoWorkflow />} />
+          <Route path="/seo/opportunities" element={<SeoOpportunities />} />
+          <Route path="/seo/tasks" element={<SeoTasks />} />
+          <Route path="/seo/briefs" element={<SeoBriefs />} />
+          <Route path="/seo/local" element={<SeoLocal />} />
+          <Route path="/seo/reports" element={<SeoReports />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

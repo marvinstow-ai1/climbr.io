@@ -36,6 +36,16 @@ const TOP_NAV: NavItem[] = [
   { to: "/wiki", label: "Wiki", icon: ICON_WIKI },
 ];
 
+const SEO_NAV: NavItem[] = [
+  { to: "/seo/workflow",      label: "Monatsplan",      icon: null },
+  { to: "/seo/opportunities", label: "Chancen",         icon: null },
+  { to: "/seo/tasks",         label: "Aufgaben",        icon: null },
+  { to: "/seo/briefs",        label: "Briefings",       icon: null },
+  { to: "/seo/local",         label: "Lokales SEO",     icon: null },
+  { to: "/seo/reports",       label: "Fortschritt",     icon: null },
+  { to: "/seo",               label: "Verbindungen",    icon: null },
+];
+
 export function Sidebar({ projects, loading, open, onClose }: Props) {
   return (
     <>
@@ -54,7 +64,7 @@ export function Sidebar({ projects, loading, open, onClose }: Props) {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <nav className="flex h-full flex-col gap-5" aria-label="Hauptbereiche">
+        <nav className="flex h-full flex-col gap-5 overflow-y-auto" aria-label="Hauptbereiche">
           <section>
             <SectionHeader>Workspace</SectionHeader>
             <ul className="mt-1 space-y-0.5">
@@ -73,6 +83,30 @@ export function Sidebar({ projects, loading, open, onClose }: Props) {
                     }
                   >
                     <span aria-hidden="true">{item.icon}</span>
+                    <span className="flex-1 truncate">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <SectionHeader>SEO-Workflow</SectionHeader>
+            <ul className="mt-1 space-y-0.5">
+              {SEO_NAV.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.to === "/seo"}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition ${
+                        isActive
+                          ? "bg-accent-dim text-accent"
+                          : "text-ink hover:bg-white/[0.04]"
+                      }`
+                    }
+                  >
                     <span className="flex-1 truncate">{item.label}</span>
                   </NavLink>
                 </li>

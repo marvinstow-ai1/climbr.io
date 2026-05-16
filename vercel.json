@@ -9,6 +9,8 @@
     { "path": "/api/cron/daily-rankings", "schedule": "0 3 * * *" }
   ],
   "rewrites": [
+    { "source": "/api/seo/:path*", "destination": "/api/seo?_p=:path*" },
+    { "source": "/api/settings/notifications", "destination": "/api/settings?_sub=notifications" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
