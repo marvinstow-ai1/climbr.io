@@ -31,9 +31,6 @@ export default function Landing() {
 
   async function handleEmailCapture(email: string) {
     if (!preview) return;
-    // Re-run with email so we link the audit to the capture_email shadow column.
-    // For Phase 1 the audit is already saved; we use a follow-up POST so the
-    // user can then unlock the full report via /api/audit/[id]?email=...
     await fetch("/api/audit/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -46,16 +43,26 @@ export default function Landing() {
 
   return (
     <>
-      <section className="mx-auto max-w-3xl px-6 pt-20 pb-12 text-center">
-        <h1 className="text-5xl font-bold tracking-tight text-ink sm:text-6xl">
-          SEO audit in <span className="text-primary">60 seconds</span>
+      <section className="mx-auto max-w-3xl px-6 pt-24 pb-16 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3 py-1 text-xs text-ink-muted backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-glow-sm" />
+          Free tier · No card required
+        </div>
+
+        <h1 className="mt-6 text-5xl font-semibold tracking-tight text-ink sm:text-6xl">
+          SEO audit in{" "}
+          <span className="text-accent">60 seconds</span>
         </h1>
-        <p className="mt-5 text-lg text-slate2">
+
+        <p className="mx-auto mt-5 max-w-xl text-base text-ink-muted">
           AI-powered SEO audits for small shops and freelancers. Get a prioritized
           fix list with quick wins — no signup required to start.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto mt-10 flex max-w-xl flex-col gap-2 sm:flex-row"
+        >
           <input
             type="url"
             inputMode="url"
@@ -71,26 +78,33 @@ export default function Landing() {
           </button>
         </form>
 
-        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="mt-4 text-sm text-red-400">{error}</p>
+        )}
 
         {phase === "running" && (
-          <p className="mt-6 text-sm text-slate2">
-            Checking your site (may take 30–90s) — grab a coffee ☕
+          <p className="mt-6 text-sm text-ink-muted">
+            Checking your site (30–90s) — sit tight.
           </p>
         )}
 
-        <p className="mt-8 text-xs text-slate2">
-          Free tier: 3 audits / month. Data hosted in the EU. No card required.
+        <p className="mt-10 text-xs text-ink-subtle">
+          3 audits / month free · Hosted in the EU
         </p>
       </section>
 
       {phase === "preview" && preview && (
-        <section className="mx-auto max-w-3xl px-6 pb-20">
-          <div className="card">
-            <div className="flex items-center justify-between">
+        <section className="mx-auto max-w-3xl px-6 pb-24">
+          <div className="card-elevated">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-slate2">SEO score</p>
-                <p className="text-4xl font-bold text-ink">{preview.score}<span className="text-xl text-slate2">/100</span></p>
+                <p className="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                  SEO score
+                </p>
+                <p className="mt-2 text-5xl font-semibold tracking-tight text-ink">
+                  {preview.score}
+                  <span className="text-2xl text-ink-subtle">/100</span>
+                </p>
               </div>
               <button
                 onClick={() => setShowEmail(true)}
@@ -99,18 +113,30 @@ export default function Landing() {
                 Unlock full report
               </button>
             </div>
-            <p className="mt-4 text-slate2">{preview.preview.summary}</p>
-            <div className="mt-6 space-y-4">
-              <h2 className="text-lg font-semibold">Top fixes (preview)</h2>
-              {preview.preview.topFixes.map((fix, i) => (
-                <FixCard key={i} fix={fix} />
-              ))}
+
+            <p className="mt-5 text-sm text-ink-muted">{preview.preview.summary}</p>
+
+            <div className="mt-8">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                Top fixes (preview)
+              </h2>
+              <div className="mt-3 space-y-3">
+                {preview.preview.topFixes.map((fix, i) => (
+                  <FixCard key={i} fix={fix} />
+                ))}
+              </div>
             </div>
-            <div className="mt-6 rounded-lg bg-sunset-50 p-4 text-sm">
-              <strong>Almost done.</strong> Enter your email to unlock the
-              complete report — including all fixes, quick wins, and exact
-              examples to copy-paste.
-              <button onClick={() => setShowEmail(true)} className="ml-2 underline">
+
+            <div className="mt-8 rounded-lg border border-accent/20 bg-accent-dim p-4 text-sm text-ink">
+              <strong className="font-medium text-accent">Almost done.</strong>{" "}
+              <span className="text-ink-muted">
+                Enter your email to unlock the complete report — all fixes, quick
+                wins, and copy-paste examples.
+              </span>
+              <button
+                onClick={() => setShowEmail(true)}
+                className="ml-2 font-medium text-accent underline-offset-4 hover:underline"
+              >
                 Get full report
               </button>
             </div>
