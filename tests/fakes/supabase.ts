@@ -8,6 +8,7 @@ export interface FakeState {
   projects: Row[];
   keywords: Row[];
   audits: Row[];
+  settings: Row[];
 }
 
 export interface FakeAuthUser {
@@ -26,6 +27,7 @@ export function makeFakeSupabase(opts: FakeOptions = {}) {
     projects: opts.state?.projects ?? [],
     keywords: opts.state?.keywords ?? [],
     audits: opts.state?.audits ?? [],
+    settings: opts.state?.settings ?? [],
   };
   const authUser = opts.user ?? null;
 
@@ -48,7 +50,7 @@ interface Filter {
   val: unknown;
 }
 
-type Op = "select" | "insert" | "update" | "delete";
+type Op = "select" | "insert" | "update" | "delete" | "upsert";
 
 interface RunResult {
   data: Row[] | null;
@@ -66,6 +68,7 @@ class QueryBuilder implements PromiseLike<RunResult> {
   private rangeStart?: number;
   private rangeEnd?: number;
   private limitN?: number;
+  private upsertKey?: string;
 
   constructor(private table: keyof FakeState, private state: FakeState) {}
 
@@ -78,6 +81,12 @@ class QueryBuilder implements PromiseLike<RunResult> {
   insert(payload: Row | Row[]): this { this.op = "insert"; this.payload = payload; return this; }
   update(payload: Row): this { this.op = "update"; this.payload = payload; return this; }
   delete(_opts?: { count?: string }): this { this.op = "delete"; return this; }
+  upsert(payload: Row, opts?: { onConflict?: string }): this {
+    this.op = "upsert";
+    this.payload = payload;
+    this.upsertKey = opts?.onConflict;
+    return this;
+  }
 
   eq(col: string, val: unknown): this  { this.filters.push({ op: "eq",  col, val }); return this; }
   gte(col: string, val: unknown): this { this.filters.push({ op: "gte", col, val }); return this; }
@@ -123,6 +132,19 @@ class QueryBuilder implements PromiseLike<RunResult> {
 
   private async run(): Promise<RunResult> {
     const rows = this.state[this.table];
+
+    if (this.op === "upsert") {
+      const p = this.payload as Row;
+      const keyCol = this.upsertKey ?? "id";
+      const existing = rows.find((r) => r[keyCol] === p[keyCol]);
+      if (existing) {
+        Object.assign(existing, p);
+        return { data: [existing], error: null, count: 1 };
+      }
+      const row = { id: cryptoUuid(), created_at: new Date().toISOString(), ...p };
+      rows.push(row);
+      return { data: [row], error: null, count: 1 };
+    }
 
     if (this.op === "insert") {
       const payload = Array.isArray(this.payload) ? this.payload : [this.payload!];

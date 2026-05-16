@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import AuditReport from "./pages/AuditReport";
@@ -7,44 +7,58 @@ import Signup from "./pages/Signup";
 import Pricing from "./pages/Pricing";
 import ProjectNew from "./pages/ProjectNew";
 import ProjectDetail from "./pages/ProjectDetail";
+import Einstellungen from "./pages/Einstellungen";
+import PasswortVergessen from "./pages/PasswortVergessen";
+import PasswortNeu from "./pages/PasswortNeu";
+import Impressum from "./pages/legal/Impressum";
+import Datenschutz from "./pages/legal/Datenschutz";
+import AGB from "./pages/legal/AGB";
+import WikiIndex from "./pages/wiki/WikiIndex";
+import WikiArticle from "./pages/wiki/WikiArticle";
 import { ToastProvider } from "./components/Toast";
+import { AppShell } from "./components/layout/AppShell";
+import { PublicShell } from "./components/layout/PublicShell";
+import { ComingSoonGuard } from "./components/layout/ComingSoonGuard";
+import { CookieBanner } from "./components/cookie/CookieBanner";
 
 export default function App() {
   return (
     <ToastProvider>
-      <div className="min-h-screen flex flex-col">
-        <header className="glass-nav sticky top-0 z-50">
-          <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-            <Link to="/" className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-ink">
-              <span className="inline-block h-6 w-6 rounded-md bg-accent shadow-glow-sm" />
-              climbr.io
-            </Link>
-            <div className="flex items-center gap-1 text-sm">
-              <Link to="/pricing" className="rounded-md px-3 py-1.5 text-ink-muted transition-colors hover:text-ink">Pricing</Link>
-              <Link to="/dashboard" className="rounded-md px-3 py-1.5 text-ink-muted transition-colors hover:text-ink">Dashboard</Link>
-              <Link to="/login" className="rounded-md px-3 py-1.5 text-ink-muted transition-colors hover:text-ink">Log in</Link>
-              <Link to="/signup" className="btn-ghost ml-2">Sign up</Link>
-            </div>
-          </nav>
-        </header>
+      <Routes>
+        {/* Public routes — minimaler Header mit Login/Signup-Buttons. */}
+        <Route element={<PublicShell />}>
+          {/* Landing bleibt hidden bis zum öffentlichen Launch. Der Guard
+              redirected anon→/login und authed→/dashboard. Zum Aktivieren
+              der Landing: <ComingSoonGuard> in App.tsx durch <Landing />
+              ersetzen. */}
+          <Route path="/" element={<ComingSoonGuard><Landing /></ComingSoonGuard>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/passwort-vergessen" element={<PasswortVergessen />} />
+          <Route path="/passwort-neu" element={<PasswortNeu />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/audit/:id" element={<AuditReport />} />
+          <Route path="/legal/impressum" element={<Impressum />} />
+          <Route path="/legal/datenschutz" element={<Datenschutz />} />
+          <Route path="/legal/agb" element={<AGB />} />
+        </Route>
 
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects/new" element={<ProjectNew />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/audit/:id" element={<AuditReport />} />
-          </Routes>
-        </main>
+        {/* Authed routes — AppShell (TopNav + Sidebar + Footer).
+            AppShell redirects to /login when the user isn't signed in. */}
+        <Route element={<AppShell />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects/new" element={<ProjectNew />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
+          {/* Placeholder routes — implemented in later Phase-4 sections */}
+          <Route path="/wiki" element={<WikiIndex />} />
+          <Route path="/wiki/:slug" element={<WikiArticle />} />
+          <Route path="/einstellungen" element={<Einstellungen />} />
+        </Route>
 
-        <footer className="border-t border-line py-8 text-center text-xs text-ink-subtle">
-          <p>© {new Date().getFullYear()} climbr.io — Hosted in the EU.</p>
-        </footer>
-      </div>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+      <CookieBanner />
     </ToastProvider>
   );
 }
+
