@@ -57,10 +57,10 @@ export default function NotificationsTab({ projectId, token, onNotify }: Props) 
 
   const unseen = rows.filter((r) => !r.seen);
 
-  if (loading) return <p className="text-slate2">Loading…</p>;
+  if (loading) return <p className="text-sm text-ink-muted">Loading…</p>;
   if (rows.length === 0) {
     return (
-      <p className="text-slate2">
+      <p className="text-sm text-ink-muted">
         No notifications yet. We'll let you know when a tracked keyword moves
         by 3+ positions.
       </p>
@@ -83,14 +83,14 @@ export default function NotificationsTab({ projectId, token, onNotify }: Props) 
           return (
             <li
               key={n.id}
-              className={`card flex items-center justify-between gap-4 ${n.seen ? "opacity-60" : ""}`}
+              className={`card flex items-center justify-between gap-4 ${n.seen ? "opacity-50" : ""}`}
             >
               <div className="min-w-0 flex-1">
-                <p className="font-medium break-words">{n.keyword}</p>
-                <p className="text-xs text-slate2">
+                <p className="text-sm font-medium text-ink break-words">{n.keyword}</p>
+                <p className="mt-1 text-xs text-ink-muted">
                   {n.old_position ?? "—"} → {n.new_position ?? "—"}
                   {delta != null && (
-                    <span className={improved ? "ml-2 text-green-600" : "ml-2 text-red-600"}>
+                    <span className={improved ? "ml-2 text-accent" : "ml-2 text-red-400"}>
                       {improved ? "▲" : "▼"} {Math.abs(delta)}
                     </span>
                   )}

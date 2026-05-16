@@ -8,9 +8,6 @@ export default function Login() {
   const [err, setErr] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // If the user is already signed in (or just landed back here from the
-  // magic link, which drops tokens in the URL hash that supabase-js parses
-  // on load), push them straight to the dashboard.
   useEffect(() => {
     const sb = ensureSupabase();
     void sb.auth.getSession().then(({ data }) => {
@@ -44,28 +41,36 @@ export default function Login() {
 
   if (sent) {
     return (
-      <div className="mx-auto max-w-md px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold">Check your email</h1>
-        <p className="mt-2 text-slate2">We sent a magic link to {email}.</p>
+      <div className="mx-auto max-w-md px-6 py-24 text-center">
+        <div className="card-elevated">
+          <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent-dim text-accent">
+            ✓
+          </div>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">Check your email</h1>
+          <p className="mt-2 text-sm text-ink-muted">We sent a magic link to <span className="text-ink">{email}</span>.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-bold">Log in</h1>
-      <form onSubmit={submit} className="mt-6 space-y-4">
-        <input
-          type="email"
-          className="input"
-          placeholder="you@example.com"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button type="submit" className="btn-primary w-full">Send magic link</button>
-        {err && <p className="text-sm text-red-600">{err}</p>}
-      </form>
+    <div className="mx-auto max-w-md px-6 py-24">
+      <div className="card-elevated">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Log in</h1>
+        <p className="mt-2 text-sm text-ink-muted">We'll email you a magic link. No password required.</p>
+        <form onSubmit={submit} className="mt-6 space-y-3">
+          <input
+            type="email"
+            className="input"
+            placeholder="you@example.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <button type="submit" className="btn-primary w-full">Send magic link</button>
+          {err && <p className="text-sm text-red-400">{err}</p>}
+        </form>
+      </div>
     </div>
   );
 }

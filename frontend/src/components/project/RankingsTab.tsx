@@ -138,30 +138,30 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
   return (
     <div className="space-y-6">
       {!gscConnected && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-200 backdrop-blur-md">
           Connect Google Search Console on the{" "}
-          <a href="/dashboard" className="font-medium underline">dashboard</a>{" "}
+          <a href="/dashboard" className="font-medium text-amber-100 underline-offset-4 hover:underline">dashboard</a>{" "}
           to pull real ranking positions. Until then we'll save your keywords but
           show empty sparklines.
         </div>
       )}
 
       {planLimit && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm" role="alert">
-          <p className="font-medium text-amber-800">{planLimit.message}</p>
-          <p className="mt-1 text-amber-700">
-            <a href="/pricing" className="font-medium underline">Upgrade your plan</a> or remove a keyword to free a slot.
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm backdrop-blur-md" role="alert">
+          <p className="font-medium text-amber-200">{planLimit.message}</p>
+          <p className="mt-1 text-amber-300/80">
+            <a href="/pricing" className="font-medium text-amber-100 underline-offset-4 hover:underline">Upgrade your plan</a> or remove a keyword to free a slot.
           </p>
         </div>
       )}
 
       <form onSubmit={onAdd} className="card flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <label htmlFor="new-keyword" className="block text-sm font-medium">Add keyword</label>
+          <label htmlFor="new-keyword" className="block text-sm font-medium text-ink">Add keyword</label>
           <input
             id="new-keyword"
             type="text"
-            className="input mt-1"
+            className="input mt-2"
             placeholder="leather backpack"
             value={newKw}
             maxLength={120}
@@ -169,7 +169,7 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
             disabled={busy}
             aria-describedby="kw-help"
           />
-          <p id="kw-help" className="mt-1 text-xs text-slate2">
+          <p id="kw-help" className="mt-2 text-xs text-ink-subtle">
             {rows.length} tracked
           </p>
         </div>
@@ -179,11 +179,11 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
       </form>
 
       {loading ? (
-        <p className="text-slate2">Loading rankings…</p>
+        <p className="text-sm text-ink-muted">Loading rankings…</p>
       ) : rows.length === 0 ? (
-        <p className="text-slate2">No keywords tracked yet. Add one above.</p>
+        <p className="text-sm text-ink-muted">No keywords tracked yet. Add one above.</p>
       ) : (
-        <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-line rounded-xl border border-line bg-white/[0.02] backdrop-blur-md">
           {rows.map((row) => {
             const delta = row.latest != null && row.prev != null ? row.prev - row.latest : null;
             const deltaLabel =
@@ -192,14 +192,14 @@ export default function RankingsTab({ projectId, token, gscConnected, onNotify }
               : delta > 0 ? `▲ ${delta}`
               : `▼ ${Math.abs(delta)}`;
             const deltaColor =
-              delta == null || delta === 0 ? "text-slate2"
-              : delta > 0 ? "text-green-600"
-              : "text-red-600";
+              delta == null || delta === 0 ? "text-ink-subtle"
+              : delta > 0 ? "text-accent"
+              : "text-red-400";
             return (
               <li key={row.id} className="flex items-center gap-4 p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">{row.keyword}</p>
-                  <p className="text-xs text-slate2">
+                  <p className="text-sm font-medium text-ink break-words">{row.keyword}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
                     {row.latest != null ? `Position #${row.latest}` : "No data yet"}
                     {delta != null && delta !== 0 && (
                       <> · <span className={deltaColor}>{deltaLabel}</span></>

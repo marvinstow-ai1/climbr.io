@@ -72,12 +72,12 @@ export default function AuditsTab({ projectId, domain, token, onNotify }: Props)
     <div className="space-y-6">
       <form onSubmit={onRun} className="card flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <label htmlFor="audit-url" className="block text-sm font-medium">URL to audit</label>
+          <label htmlFor="audit-url" className="block text-sm font-medium text-ink">URL to audit</label>
           <input
             id="audit-url"
             type="url"
             inputMode="url"
-            className="input mt-1"
+            className="input mt-2"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             required
@@ -85,32 +85,32 @@ export default function AuditsTab({ projectId, domain, token, onNotify }: Props)
           />
         </div>
         <button type="submit" className="btn-primary" disabled={running || !urlInput.trim()}>
-          {running ? "Auditing — grab a coffee ☕" : "Run new audit"}
+          {running ? "Auditing…" : "Run new audit"}
         </button>
       </form>
 
       {loading ? (
-        <p className="text-slate2">Loading audits…</p>
+        <p className="text-sm text-ink-muted">Loading audits…</p>
       ) : audits.length === 0 ? (
-        <p className="text-slate2">No audits yet. Run one above to get started.</p>
+        <p className="text-sm text-ink-muted">No audits yet. Run one above to get started.</p>
       ) : (
         <ul className="space-y-2">
           {audits.map((a) => (
-            <li key={a.id} className="card flex items-center justify-between gap-4">
+            <li key={a.id} className="card flex items-center justify-between gap-4 transition-colors hover:bg-white/[0.05]">
               <div className="min-w-0 flex-1">
-                <Link to={`/audit/${a.id}`} className="font-medium text-primary hover:underline break-all">
+                <Link to={`/audit/${a.id}`} className="font-medium text-ink hover:text-accent transition-colors break-all">
                   {a.url}
                 </Link>
-                <p className="text-xs text-slate2">
+                <p className="mt-1 text-xs text-ink-muted">
                   {new Date(a.created_at).toLocaleString()} · {a.status}
-                  {a.error && <span className="text-red-600"> — {a.error}</span>}
+                  {a.error && <span className="text-red-400"> — {a.error}</span>}
                 </p>
               </div>
               <div className="shrink-0 text-right">
                 {a.score != null ? (
-                  <span className="text-2xl font-bold">{a.score}<span className="text-sm text-slate2">/100</span></span>
+                  <span className="text-2xl font-semibold text-ink">{a.score}<span className="text-sm text-ink-subtle">/100</span></span>
                 ) : (
-                  <span className="text-sm text-slate2">—</span>
+                  <span className="text-sm text-ink-subtle">—</span>
                 )}
               </div>
             </li>

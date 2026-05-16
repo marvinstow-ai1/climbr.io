@@ -13,17 +13,17 @@ export default function App() {
   return (
     <ToastProvider>
       <div className="min-h-screen flex flex-col">
-        <header className="border-b border-slate-200 bg-white">
-          <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link to="/" className="flex items-center gap-2 text-xl font-bold text-ink">
-              <span className="inline-block h-7 w-7 rounded-md bg-primary" />
+        <header className="glass-nav sticky top-0 z-50">
+          <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+            <Link to="/" className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-ink">
+              <span className="inline-block h-6 w-6 rounded-md bg-accent shadow-glow-sm" />
               climbr.io
             </Link>
-            <div className="flex items-center gap-3 text-sm">
-              <Link to="/pricing" className="text-slate2 hover:text-ink">Pricing</Link>
-              <Link to="/dashboard" className="text-slate2 hover:text-ink">Dashboard</Link>
-              <Link to="/login" className="text-slate2 hover:text-ink">Log in</Link>
-              <Link to="/signup" className="btn-ghost">Sign up</Link>
+            <div className="flex items-center gap-1 text-sm">
+              <Link to="/pricing" className="rounded-md px-3 py-1.5 text-ink-muted transition-colors hover:text-ink">Pricing</Link>
+              <Link to="/dashboard" className="rounded-md px-3 py-1.5 text-ink-muted transition-colors hover:text-ink">Dashboard</Link>
+              <Link to="/login" className="rounded-md px-3 py-1.5 text-ink-muted transition-colors hover:text-ink">Log in</Link>
+              <Link to="/signup" className="btn-ghost ml-2">Sign up</Link>
             </div>
           </nav>
         </header>
@@ -41,7 +41,7 @@ export default function App() {
           </Routes>
         </main>
 
-        <footer className="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate2">
+        <footer className="border-t border-line py-8 text-center text-xs text-ink-subtle">
           <p>© {new Date().getFullYear()} climbr.io — Hosted in the EU.</p>
         </footer>
       </div>

@@ -27,14 +27,14 @@ export default function EmailCaptureModal({ open, onClose, onSubmit }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
-      <div className="card max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-semibold text-ink">Almost done.</h2>
-        <p className="mt-2 text-slate2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="card-elevated max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-semibold tracking-tight text-ink">Almost done.</h2>
+        <p className="mt-2 text-sm text-ink-muted">
           Enter your email to get the full report. We'll save it to your account
           so you can come back later.
         </p>
-        <form onSubmit={submit} className="mt-4 space-y-3">
+        <form onSubmit={submit} className="mt-5 space-y-3">
           <input
             type="email"
             required
@@ -48,8 +48,8 @@ export default function EmailCaptureModal({ open, onClose, onSubmit }: Props) {
           <button type="submit" className="btn-primary w-full" disabled={busy}>
             {busy ? "Saving…" : "Get full report"}
           </button>
-          {err && <p className="text-sm text-red-600">{err}</p>}
-          <p className="text-xs text-slate2">
+          {err && <p className="text-sm text-red-400">{err}</p>}
+          <p className="text-xs text-ink-subtle">
             By continuing you agree to the privacy policy. Data hosted in the EU.
           </p>
         </form>

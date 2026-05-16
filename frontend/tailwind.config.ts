@@ -5,26 +5,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          DEFAULT: "#2B8AF3",
-          50: "#EBF3FE",
-          100: "#D7E7FD",
-          500: "#2B8AF3",
-          600: "#1E72D1",
-          700: "#175AA8",
+        accent: {
+          DEFAULT: "#D4F26B",
+          hover: "#BEE34F",
+          soft: "#E4F89A",
+          dim: "rgba(212, 242, 107, 0.12)",
         },
-        sunset: {
-          DEFAULT: "#FF8A4B",
-          50: "#FFF1E8",
-          500: "#FF8A4B",
-          600: "#E66F33",
+        bg: {
+          DEFAULT: "#08090B",
+          raised: "#101113",
+          elevated: "#16181C",
         },
-        ink: "#0F172A",
-        slate2: "#64748B",
-        surface: "#F8FAFC",
+        ink: {
+          DEFAULT: "#ECECEE",
+          muted: "#8A8F98",
+          subtle: "#5C6068",
+        },
+        line: "rgba(255, 255, 255, 0.08)",
+        "line-strong": "rgba(255, 255, 255, 0.14)",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      backdropBlur: {
+        xs: "2px",
+      },
+      boxShadow: {
+        glow: "0 0 60px -10px rgba(212, 242, 107, 0.35)",
+        "glow-sm": "0 0 24px -6px rgba(212, 242, 107, 0.4)",
       },
     },
   },
