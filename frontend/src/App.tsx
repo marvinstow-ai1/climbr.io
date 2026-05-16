@@ -18,6 +18,7 @@ import WikiArticle from "./pages/wiki/WikiArticle";
 import { ToastProvider } from "./components/Toast";
 import { AppShell } from "./components/layout/AppShell";
 import { PublicShell } from "./components/layout/PublicShell";
+import { ComingSoonGuard } from "./components/layout/ComingSoonGuard";
 import { CookieBanner } from "./components/cookie/CookieBanner";
 
 export default function App() {
@@ -26,7 +27,11 @@ export default function App() {
       <Routes>
         {/* Public routes — minimaler Header mit Login/Signup-Buttons. */}
         <Route element={<PublicShell />}>
-          <Route path="/" element={<Landing />} />
+          {/* Landing bleibt hidden bis zum öffentlichen Launch. Der Guard
+              redirected anon→/login und authed→/dashboard. Zum Aktivieren
+              der Landing: <ComingSoonGuard> in App.tsx durch <Landing />
+              ersetzen. */}
+          <Route path="/" element={<ComingSoonGuard><Landing /></ComingSoonGuard>} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/passwort-vergessen" element={<PasswortVergessen />} />

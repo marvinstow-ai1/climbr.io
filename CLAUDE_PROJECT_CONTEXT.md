@@ -77,13 +77,18 @@ es wichtig ist, und was der nächste konkrete Schritt ist.
 
 | Bereich | Inhalt                                            | Branch                              | Status |
 |---------|---------------------------------------------------|-------------------------------------|--------|
-| 1       | Dashboard-Redesign (AppShell, Cards, Projektliste) | `claude/climbr-phase-4-setup-j1zSI` | 🚧 in Arbeit |
-| 2       | Learning-Layer (ExplainerBox, NextStepCTA)        | folgt                               | ⏳ offen |
-| 3       | Account `/einstellungen`                          | folgt                               | ⏳ offen |
-| 4       | Legal-Seiten + Cookie-Banner                      | folgt                               | ⏳ offen |
-| 5       | SEO Wiki (`/wiki`)                                | folgt                               | ⏳ offen |
-| 6       | Auth-Flow Polish (Passwort-Reset, DE-Microcopy)   | folgt                               | ⏳ offen |
+| 1       | Dashboard-Redesign (AppShell, Cards, Projektliste) | `claude/climbr-phase-4-setup-j1zSI` | ✅ fertig |
+| 2       | Learning-Layer (ExplainerBox, NextStepCTA)        | `claude/climbr-phase-4-setup-j1zSI` | ✅ fertig |
+| 3       | Account `/einstellungen`                          | `claude/climbr-phase-4-setup-j1zSI` | ✅ fertig |
+| 4       | Legal-Seiten + Cookie-Banner                      | `claude/climbr-phase-4-setup-j1zSI` | ✅ fertig |
+| 5       | SEO Wiki (`/wiki`)                                | `claude/climbr-phase-4-setup-j1zSI` | ✅ fertig |
+| 6       | Auth-Flow Polish (Passwort-Reset, DE-Microcopy)   | `claude/climbr-phase-4-setup-j1zSI` | ✅ fertig |
 | 7       | CI: bereits vorhanden (`ci.yml`, `preview-deploy.yml`, `playwright-demo.yml`) | — | ✅ bereits da |
+
+Phase 4 ist **abgeschlossen** auf dem gemeinsamen Branch
+`claude/climbr-phase-4-setup-j1zSI`. Alle Bereiche wurden statt in
+separaten PRs in einem fortlaufenden Branch entwickelt — Merge in main
+nach finaler Sichtung durch Marvin.
 
 > **Hinweis zu Bereich 7:** Die im Phase-4-Prompt erwähnten Workflows
 > `preview-deploy.yml` und `playwright-demo.yml` existieren bereits. Vor
@@ -128,34 +133,80 @@ umgeht RLS — wird nur in Server-Functions (`api/*`) genutzt.
 
 ---
 
-## Aktueller Stand (Phase 4 — Bereich 1)
+## Aktueller Stand (Phase 4 — alle Bereiche fertig)
 
 ### Hinzugefügt
 
-- **AppShell** (`frontend/src/components/layout/`): TopNav, Sidebar,
-  Footer, NotificationDropdown. Wird als Route-Wrapper für alle authed
-  Routen verwendet.
-- **Dashboard-Redesign** (`frontend/src/pages/Dashboard.tsx`):
-  Übersichts-Cards + Projekt-Tabelle + Leerzustand. Holt Audits,
-  Rankings, Notifications selbst.
-- **Komponenten** (`frontend/src/components/dashboard/`):
-  `OverviewCards`, `ProjectTable`, `EmptyDashboard`.
-- **Tests**: `tests/dashboard.test.ts` (Helper-Unit-Tests),
-  Playwright-Smoke um Dashboard-Visit erweitert.
+**Bereich 1 — Dashboard / AppShell:**
+- `frontend/src/components/layout/`: AppShell, TopNav, Sidebar,
+  NotificationDropdown, Footer, PublicShell, ComingSoonGuard.
+- `frontend/src/pages/Dashboard.tsx`: Übersichts-Cards + Projekt-Tabelle
+  mit GSC-Connect-Inline-Actions + Empty-State.
+- `frontend/src/components/dashboard/`: OverviewCards, ProjectTable,
+  EmptyDashboard + reine Metric-Helper (`pickLatestAudit`,
+  `computeKeywordMovements`, `scoreBucket`).
 
-### Bewusst offen / nicht in Bereich 1
+**Bereich 2 — Learning-Layer:**
+- `frontend/src/components/learning/`: ExplainerBox (mit per-key
+  localStorage-Tracking), NextStepCTA, TooltipHint, WikiLink.
+- `frontend/src/data/learning.ts`: Microcopy für 8 SEO-Konzepte.
+- Integration: AuditReport (Score-Explainer + NextStep-CTAs nach Quick
+  Wins und Top-Fixes, Wiki-Links), RankingsTab (Rankings-Explainer +
+  TooltipHints), NotificationsTab (Notifications-Explainer).
 
-- Bereich 2 (Learning-Layer / ExplainerBox) — die Microcopy-Texte sind
-  schon in `frontend/src/data/learning.ts` als Stub vorbereitet, werden
-  in Bereich 2 in echte Komponenten gebunden.
-- Sidebar "+ Neues Projekt" linkt auf bestehende Route `/projects/new`
-  (deutsche Route `/projekte/neu` folgt in späterer Phase mit dem
-  Routing-Refactor).
-- TopNav-Link "Wiki" und "Einstellungen" sind sichtbar aber
-  Placeholder-Routen — werden in Bereich 3 / 5 echt.
+**Bereich 3 — Account `/einstellungen`:**
+- `api/settings.ts`: GET liefert Profil + Plan + Limits + Verbrauch.
+- `api/settings/notifications.ts`: PATCH togelt email_notifications
+  (upsert, falls settings-Row noch fehlt).
+- `frontend/src/pages/Einstellungen.tsx`: vier Sektionen — Profil
+  (E-Mail, Passwort-ändern, Account-löschen-Stub), Mein Plan,
+  Google Search Console, Benachrichtigungen.
+
+**Bereich 4 — Legal + Cookie-Banner:**
+- `frontend/src/pages/legal/`: Impressum (§5 TMG), Datenschutz
+  (Art. 13/14 DSGVO), AGB (12 Abschnitte).
+- `frontend/src/components/legal/LegalLayout.tsx`: einheitliche
+  Typografie + Placeholder-Span für Marvin-zu-ersetzende Stellen.
+- `frontend/src/components/cookie/CookieBanner.tsx`: DSGVO-konform,
+  kein Dark Pattern, State in localStorage, Footer-Link zum
+  Wiederöffnen.
+
+**Bereich 5 — SEO Wiki:**
+- `frontend/src/data/wiki/`: 23 Artikel verteilt auf 5 Kategorien
+  (Grundlagen 4, On-Page 6, Technisches 6, Keywords 5, Lokales 2).
+- `frontend/src/pages/wiki/`: WikiIndex (Suche + Kategorie-Filter +
+  Karten-Grid), WikiArticle (Header + Breadcrumb + Markdown-Body +
+  verwandte Artikel).
+- `frontend/src/components/wiki/`: WikiCard, WikiBody (mini
+  Markdown-Renderer: H2/H3, Absätze, Listen, Code-Blöcke, Tabellen,
+  inline-Formatierung).
+
+**Bereich 6 — Auth-Flow Polish:**
+- `frontend/src/lib/authErrors.ts`: germanAuthError() mapped
+  Supabase-Originalfehler auf deutsche Texte.
+- `frontend/src/pages/Login.tsx`: Passwort + Magic-Link parallel,
+  "Passwort vergessen?", deutsche Microcopy.
+- `frontend/src/pages/Signup.tsx`: eigene Seite mit E-Mail + Passwort
+  + Bestätigung + Live-Validation, AGB-Hinweis, Welcome-Toast.
+- `frontend/src/pages/PasswortVergessen.tsx`,
+  `frontend/src/pages/PasswortNeu.tsx`: Reset-Flow via
+  `supabase.resetPasswordForEmail` + PASSWORD_RECOVERY-Event.
+- DE-Übersetzungen: ProjectNew, ProjectDetail, AuditsTab,
+  RankingsTab, NotificationsTab.
+
+**Übergreifend:**
+- ComingSoonGuard auf `/`: Landing-Page bleibt hidden — anon → /login,
+  authed → /dashboard.
+- 99 Vitest-Tests (von 46 in Phase 3), alle grün.
+- Playwright-Smoke-Test auf die deutschen Texte angepasst + um
+  Dashboard-Visit + Empty-State-Fall erweitert.
 
 ### Manuelle Schritte für Marvin
 
 Siehe `docs/PHASE_4_GUIDE.md` — schrittweise Anleitung für alles, was
-außerhalb von Claudes Zugriff liegt (Vercel-Env, Supabase-Secrets,
-DNS, Legal-Platzhalter, etc.).
+außerhalb von Claudes Zugriff liegt:
+- Lokal-Test der UI
+- Supabase E-Mail-Templates auf Deutsch
+- Supabase Redirect-URLs für Passwort-Reset
+- Legal-Platzhalter ersetzen (Name, Adresse, USt-Id, Gerichtsstand)
+- GitHub-Secrets (VERCEL_*, SUPABASE_*, OPENAI_*)
