@@ -58,7 +58,13 @@ export default async function handler(req: Request): Promise<Response> {
         continue;
       }
       // Always record (null = not in top 100), so the chart has continuity.
-      await db.from("rankings").insert({ project_id: project.id, keyword, position });
+      const { error: insErr } = await db
+        .from("rankings")
+        .insert({ project_id: project.id, keyword, position });
+      if (insErr) {
+        console.error("cron: rankings insert failed", project.id, keyword, insErr.message);
+        continue;
+      }
 
       const { data: prev } = await db
         .from("rankings")
@@ -71,13 +77,17 @@ export default async function handler(req: Request): Promise<Response> {
 
       const prevPos = prev?.position ?? null;
       if (position != null && prevPos != null && Math.abs(position - prevPos) >= POSITION_DELTA) {
-        await db.from("notifications").insert({
+        const { error: notifErr } = await db.from("notifications").insert({
           project_id: project.id,
           keyword,
           old_position: prevPos,
           new_position: position,
         });
-        notifications++;
+        if (notifErr) {
+          console.error("cron: notification insert failed", project.id, keyword, notifErr.message);
+        } else {
+          notifications++;
+        }
       }
       processed++;
     }

@@ -33,12 +33,27 @@ export default async function handler(req: Request): Promise<Response> {
     return redirectToDashboard(req, { gsc: "bad_request" });
   }
 
-  const payload = await verifyState(state);
+  const payload = await verifyState(state).catch((err: unknown) => {
+    // OAUTH_STATE_SECRET fehlt → verifyState throws. Ohne Catch wäre das
+    // ein 500 für den Nutzer (Google-Redirect mit code+state). Jetzt
+    // landen wir mit klarer Statusmeldung zurück im Dashboard.
+    const msg = err instanceof Error ? err.message : "unknown";
+    console.error("gsc callback: verifyState failed:", msg.slice(0, 120));
+    return null;
+  });
   if (!payload) {
     return redirectToDashboard(req, { gsc: "bad_state" });
   }
 
-  const db = serverClient();
+  let db;
+  try {
+    db = serverClient();
+  } catch (err) {
+    // Supabase-Env fehlt → ohne Catch landet der Nutzer auf einer
+    // weißen 500-Seite mitten im OAuth-Flow.
+    console.error("gsc callback: serverClient init failed:", err instanceof Error ? err.message : "unknown");
+    return redirectToDashboard(req, { gsc: "failed" });
+  }
 
   // Re-check the project still belongs to the same user (defense in depth).
   const { data: project } = await db

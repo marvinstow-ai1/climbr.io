@@ -20,7 +20,14 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: { message: "projectId required" } }, { status: 400 });
   }
 
-  const db = serverClient();
+  let db;
+  try {
+    db = serverClient();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown";
+    console.error("gsc/disconnect: serverClient init failed", message);
+    return json({ error: { message: `server misconfigured: ${message}` } }, { status: 503 });
+  }
   const { data: userRes } = await db.auth.getUser(token);
   const userId = userRes?.user?.id;
   if (!userId) return json({ error: { message: "invalid token" } }, { status: 401 });
@@ -47,7 +54,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  await db
+  const { error: upErr } = await db
     .from("projects")
     .update({
       gsc_connected: false,
@@ -57,6 +64,10 @@ export default async function handler(req: Request): Promise<Response> {
       gsc_property_uri: null,
     })
     .eq("id", project.id);
+  if (upErr) {
+    console.error("gsc/disconnect: project update failed", upErr.message);
+    return json({ error: { message: "could not clear GSC link" } }, { status: 500 });
+  }
 
   return json({ ok: true });
 }
