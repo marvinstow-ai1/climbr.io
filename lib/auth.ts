@@ -14,9 +14,10 @@ export interface AuthContext {
 // oder die DB unerreichbar ist, hängt der getUser()-fetch sonst bis
 // Vercel die Function killt (504). Mit Timeout bekommt der Aufrufer
 // eine klare Fehlermeldung über safeHandler.
-async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+async function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  // Promise.resolve(p) lifts PromiseLike (Supabase PostgrestBuilder) zu echtem Promise.
   return await Promise.race([
-    p,
+    Promise.resolve(p),
     new Promise<never>((_, rej) => setTimeout(() => rej(new Error(`${label} timed out after ${ms}ms — Supabase unreachable, prüfe SUPABASE_URL`)), ms)),
   ]);
 }
