@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { serverClient } from "../lib/supabase.js";
 import { requireAuth } from "../lib/auth.js";
+import { safeHandler } from "../lib/safeHandler.js";
 import { limitsFor } from "../lib/plans.js";
 import { badRequest, json } from "../lib/validation.js";
 
@@ -22,7 +23,7 @@ const NotificationsInput = z.object({
   email_notifications: z.boolean(),
 });
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const sub = url.searchParams.get("_sub");
   const isNotifications = sub === "notifications" || url.pathname.endsWith("/notifications");
@@ -96,4 +97,6 @@ async function countAuditsThisMonth(db: SupabaseClient, userId: string): Promise
     .gte("created_at", start.toISOString());
   return count ?? 0;
 }
+
+export default safeHandler("api/settings", _handler);
 

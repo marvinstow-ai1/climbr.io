@@ -1,9 +1,10 @@
 import { serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
+import { safeHandler } from "../../lib/safeHandler.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   if (req.method !== "GET") return json({ error: { message: "method not allowed" } }, { status: 405 });
 
   const url = new URL(req.url);
@@ -55,3 +56,5 @@ export default async function handler(req: Request): Promise<Response> {
 
   return json(data);
 }
+
+export default safeHandler("api/audit/[id]", _handler);

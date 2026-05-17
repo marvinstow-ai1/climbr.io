@@ -7,6 +7,7 @@
 // No tokens are ever returned in the response body or query string.
 
 import { serverClient, encryptToken } from "../../lib/supabase.js";
+import { safeHandler } from "../../lib/safeHandler.js";
 import {
   exchangeCode,
   listSites,
@@ -16,7 +17,7 @@ import {
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   if (req.method !== "GET") {
     return new Response("method not allowed", { status: 405 });
   }
@@ -114,3 +115,5 @@ function redirectToDashboard(req: Request, params: Record<string, string>): Resp
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   return new Response(null, { status: 302, headers: { location: u.toString() } });
 }
+
+export default safeHandler("api/gsc/callback", _handler);

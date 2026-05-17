@@ -1,9 +1,10 @@
 import { serverClient } from "../lib/supabase.js";
 import { MarkNotificationsSeenInput, badRequest, json } from "../lib/validation.js";
+import { safeHandler } from "../lib/safeHandler.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   const auth = req.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) return json({ error: { message: "auth required" } }, { status: 401 });
   const token = auth.slice("Bearer ".length);
@@ -40,3 +41,5 @@ export default async function handler(req: Request): Promise<Response> {
 
   return json({ error: { message: "method not allowed" } }, { status: 405 });
 }
+
+export default safeHandler("api/notifications", _handler);

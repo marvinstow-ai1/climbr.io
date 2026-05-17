@@ -5,13 +5,14 @@
 
 import { decryptToken, serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
+import { safeHandler } from "../../lib/safeHandler.js";
 import { fetchGscPosition } from "../../lib/gsc.js";
 
 export const config = { runtime: "nodejs" };
 
 const POSITION_DELTA = 3;
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   // Vercel cron requests include the configured secret. For local testing this
   // header is missing — allow GET when CRON_LOCAL=1.
   if (req.method !== "GET" && req.method !== "POST") {
@@ -107,4 +108,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   return json({ ok: true, processed, notifications, prunedAudits: prunedAudits ?? 0 });
 }
+
+export default safeHandler("api/cron/daily-rankings", _handler);
 
