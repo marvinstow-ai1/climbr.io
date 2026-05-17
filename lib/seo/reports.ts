@@ -5,6 +5,7 @@
 
 import { decryptToken, serverClient } from "../supabase.js";
 import { requireAuth } from "../auth.js";
+import { parseRequestUrl } from "../safeHandler.js";
 import { json, badRequest } from "../validation.js";
 
 export const config = { runtime: "nodejs" };
@@ -17,7 +18,7 @@ export async function handle_reports(req: Request): Promise<Response> {
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   const projectId = url.searchParams.get("projectId");
   if (!projectId) return badRequest("projectId required");
   if (!(await ownsProject(db, ctx.userId, projectId))) {

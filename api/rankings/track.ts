@@ -6,7 +6,7 @@
 import { serverClient } from "../../lib/supabase.js";
 import { TrackKeywordInput, badRequest, json } from "../../lib/validation.js";
 import { requireAuth } from "../../lib/auth.js";
-import { safeHandler } from "../../lib/safeHandler.js";
+import { safeHandler, parseRequestUrl } from "../../lib/safeHandler.js";
 import { limitsFor, planLimitError } from "../../lib/plans.js";
 
 export const config = { runtime: "nodejs" };
@@ -17,7 +17,7 @@ async function _handler(req: Request): Promise<Response> {
   if (ctx instanceof Response) return ctx;
 
   if (req.method === "DELETE") {
-    const url = new URL(req.url);
+    const url = parseRequestUrl(req);
     const id = url.searchParams.get("id");
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
       return json({ error: { message: "id required" } }, { status: 400 });

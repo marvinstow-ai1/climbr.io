@@ -7,7 +7,7 @@
 // No tokens are ever returned in the response body or query string.
 
 import { serverClient, encryptToken } from "../../lib/supabase.js";
-import { safeHandler } from "../../lib/safeHandler.js";
+import { safeHandler, parseRequestUrl } from "../../lib/safeHandler.js";
 import {
   exchangeCode,
   listSites,
@@ -22,7 +22,7 @@ async function _handler(req: Request): Promise<Response> {
     return new Response("method not allowed", { status: 405 });
   }
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   const errorParam = url.searchParams.get("error");
   if (errorParam) {
     return redirectToDashboard(req, { gsc: "denied" });
@@ -110,7 +110,7 @@ async function _handler(req: Request): Promise<Response> {
 }
 
 function redirectToDashboard(req: Request, params: Record<string, string>): Response {
-  const origin = new URL(req.url).origin;
+  const origin = parseRequestUrl(req).origin;
   const u = new URL("/dashboard", origin);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   return new Response(null, { status: 302, headers: { location: u.toString() } });

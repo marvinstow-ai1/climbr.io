@@ -13,7 +13,7 @@
 // keeps us well under the limit without changing the public URL shape.
 
 import { json } from "../lib/validation.js";
-import { safeHandler } from "../lib/safeHandler.js";
+import { safeHandler, parseRequestUrl } from "../lib/safeHandler.js";
 import { handle_integrations } from "../lib/seo/integrations.js";
 import { handle_test } from "../lib/seo/integrationsTest.js";
 import { handle_opportunities } from "../lib/seo/opportunities.js";
@@ -25,7 +25,7 @@ import { handle_reports } from "../lib/seo/reports.js";
 export const config = { runtime: "nodejs" };
 
 async function dispatch(req: Request): Promise<Response> {
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   // The Vercel rewrite forwards the captured sub-path in `_p`. We strip it
   // from the query before handing off so child handlers don't see it.
   const fromQuery = url.searchParams.get("_p");

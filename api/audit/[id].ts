@@ -1,13 +1,13 @@
 import { serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
-import { safeHandler } from "../../lib/safeHandler.js";
+import { safeHandler, parseRequestUrl } from "../../lib/safeHandler.js";
 
 export const config = { runtime: "nodejs" };
 
 async function _handler(req: Request): Promise<Response> {
   if (req.method !== "GET") return json({ error: { message: "method not allowed" } }, { status: 405 });
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   const id = url.pathname.split("/").pop();
   if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
     return json({ error: { message: "invalid id" } }, { status: 400 });

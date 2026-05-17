@@ -1,6 +1,6 @@
 import { serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
-import { safeHandler } from "../../lib/safeHandler.js";
+import { safeHandler, parseRequestUrl } from "../../lib/safeHandler.js";
 import { buildAuthorizeUrl, signState, STATE_TTL_MS } from "../../lib/gsc.js";
 
 export const config = { runtime: "nodejs" };
@@ -16,7 +16,7 @@ async function _handler(req: Request): Promise<Response> {
   }
   const token = auth.slice("Bearer ".length);
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   const projectId = url.searchParams.get("projectId");
   if (!projectId || !/^[0-9a-f-]{36}$/i.test(projectId)) {
     return json({ error: { message: "projectId required" } }, { status: 400 });

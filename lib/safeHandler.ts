@@ -21,6 +21,29 @@ import { json } from "./validation.js";
 
 type Handler = (req: Request) => Promise<Response>;
 
+/**
+ * Vercels Node-Runtime exposed `req.url` manchmal als RELATIVEN Pfad
+ * ("/api/seo/integrations") statt als absolute URL — `new URL(req.url)`
+ * wirft dann `TypeError: Invalid URL` und der Endpoint crasht mit 500.
+ *
+ * Dieser Helper rekonstruiert eine valide URL: erst absolut versuchen,
+ * sonst aus `host` + `x-forwarded-proto` Headern bauen, sonst dummy-base.
+ */
+export function parseRequestUrl(req: Request): URL {
+  try {
+    return new URL(req.url);
+  } catch {
+    const host = req.headers.get("host") ?? "localhost";
+    const proto = req.headers.get("x-forwarded-proto") ?? "https";
+    try {
+      return new URL(req.url, `${proto}://${host}`);
+    } catch {
+      // Letzter Fallback — niemals werfen.
+      return new URL(req.url || "/", "https://localhost");
+    }
+  }
+}
+
 export function safeHandler(label: string, fn: Handler): Handler {
   return async (req: Request): Promise<Response> => {
     const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
