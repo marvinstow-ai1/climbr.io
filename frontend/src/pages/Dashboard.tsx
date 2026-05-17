@@ -55,7 +55,16 @@ export default function Dashboard() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
+        const msg = body?.error?.message ?? `HTTP ${res.status}`;
+        // 501 = Server-Konfig fehlt (OAuth-Secrets) — klare Meldung statt
+        // generischem "Fehler". 503 = Supabase nicht erreichbar.
+        if (res.status === 501) {
+          throw new Error(`GSC ist serverseitig nicht konfiguriert (${msg}). Bitte Admin kontaktieren.`);
+        }
+        if (res.status === 503) {
+          throw new Error("Server gerade nicht erreichbar. Bitte später erneut versuchen.");
+        }
+        throw new Error(msg);
       }
       const { authorizeUrl } = (await res.json()) as { authorizeUrl: string };
       window.location.href = authorizeUrl;

@@ -7,6 +7,7 @@
 // No tokens are ever returned in the response body or query string.
 
 import { serverClient, encryptToken } from "../../lib/supabase.js";
+import { safeHandler, parseRequestUrl } from "../../lib/safeHandler.js";
 import {
   exchangeCode,
   listSites,
@@ -16,12 +17,12 @@ import {
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   if (req.method !== "GET") {
     return new Response("method not allowed", { status: 405 });
   }
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   const errorParam = url.searchParams.get("error");
   if (errorParam) {
     return redirectToDashboard(req, { gsc: "denied" });
@@ -33,12 +34,27 @@ export default async function handler(req: Request): Promise<Response> {
     return redirectToDashboard(req, { gsc: "bad_request" });
   }
 
-  const payload = await verifyState(state);
+  const payload = await verifyState(state).catch((err: unknown) => {
+    // OAUTH_STATE_SECRET fehlt → verifyState throws. Ohne Catch wäre das
+    // ein 500 für den Nutzer (Google-Redirect mit code+state). Jetzt
+    // landen wir mit klarer Statusmeldung zurück im Dashboard.
+    const msg = err instanceof Error ? err.message : "unknown";
+    console.error("gsc callback: verifyState failed:", msg.slice(0, 120));
+    return null;
+  });
   if (!payload) {
     return redirectToDashboard(req, { gsc: "bad_state" });
   }
 
-  const db = serverClient();
+  let db;
+  try {
+    db = serverClient();
+  } catch (err) {
+    // Supabase-Env fehlt → ohne Catch landet der Nutzer auf einer
+    // weißen 500-Seite mitten im OAuth-Flow.
+    console.error("gsc callback: serverClient init failed:", err instanceof Error ? err.message : "unknown");
+    return redirectToDashboard(req, { gsc: "failed" });
+  }
 
   // Re-check the project still belongs to the same user (defense in depth).
   const { data: project } = await db
@@ -94,8 +110,10 @@ export default async function handler(req: Request): Promise<Response> {
 }
 
 function redirectToDashboard(req: Request, params: Record<string, string>): Response {
-  const origin = new URL(req.url).origin;
+  const origin = parseRequestUrl(req).origin;
   const u = new URL("/dashboard", origin);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   return new Response(null, { status: 302, headers: { location: u.toString() } });
 }
+
+export default safeHandler("api/gsc/callback", _handler);

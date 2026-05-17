@@ -11,6 +11,7 @@
 
 import { serverClient, encryptToken } from "../supabase.js";
 import { requireAuth } from "../auth.js";
+import { parseRequestUrl } from "../safeHandler.js";
 import { json, badRequest } from "../validation.js";
 import { serverCredentials as dataForSeoServerCreds } from "../dataforseo.js";
 
@@ -31,7 +32,7 @@ export async function handle_integrations(req: Request): Promise<Response> {
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
 
   if (req.method === "GET") {
     return getStatuses(ctx.userId, db);

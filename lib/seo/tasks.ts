@@ -7,6 +7,7 @@
 
 import { serverClient } from "../supabase.js";
 import { requireAuth } from "../auth.js";
+import { parseRequestUrl } from "../safeHandler.js";
 import { json, badRequest } from "../validation.js";
 import { taskFromOpportunity } from "../seoTasks.js";
 
@@ -20,7 +21,7 @@ export async function handle_tasks(req: Request): Promise<Response> {
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
 
   if (req.method === "GET") {
     const projectId = url.searchParams.get("projectId");

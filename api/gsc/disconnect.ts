@@ -4,23 +4,31 @@
 
 import { decryptToken, serverClient } from "../../lib/supabase.js";
 import { json } from "../../lib/validation.js";
+import { safeHandler, parseRequestUrl } from "../../lib/safeHandler.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: { message: "method not allowed" } }, { status: 405 });
 
   const auth = req.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) return json({ error: { message: "auth required" } }, { status: 401 });
   const token = auth.slice("Bearer ".length);
 
-  const url = new URL(req.url);
+  const url = parseRequestUrl(req);
   const projectId = url.searchParams.get("projectId");
   if (!projectId || !/^[0-9a-f-]{36}$/i.test(projectId)) {
     return json({ error: { message: "projectId required" } }, { status: 400 });
   }
 
-  const db = serverClient();
+  let db;
+  try {
+    db = serverClient();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown";
+    console.error("gsc/disconnect: serverClient init failed", message);
+    return json({ error: { message: `server misconfigured: ${message}` } }, { status: 503 });
+  }
   const { data: userRes } = await db.auth.getUser(token);
   const userId = userRes?.user?.id;
   if (!userId) return json({ error: { message: "invalid token" } }, { status: 401 });
@@ -47,7 +55,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  await db
+  const { error: upErr } = await db
     .from("projects")
     .update({
       gsc_connected: false,
@@ -57,6 +65,12 @@ export default async function handler(req: Request): Promise<Response> {
       gsc_property_uri: null,
     })
     .eq("id", project.id);
+  if (upErr) {
+    console.error("gsc/disconnect: project update failed", upErr.message);
+    return json({ error: { message: "could not clear GSC link" } }, { status: 500 });
+  }
 
   return json({ ok: true });
 }
+
+export default safeHandler("api/gsc/disconnect", _handler);

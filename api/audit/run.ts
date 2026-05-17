@@ -2,6 +2,7 @@ import { crawlUrl, deriveHeuristicScore } from "../../lib/crawl.js";
 import { analyze } from "../../lib/ai.js";
 import { serverClient } from "../../lib/supabase.js";
 import { RunAuditInput, badRequest, json, serverError, tooMany } from "../../lib/validation.js";
+import { safeHandler } from "../../lib/safeHandler.js";
 import { clientIp, isOverAnonLimit, logAnonAttempt } from "../../lib/ratelimit.js";
 import { limitsFor, normalizePlan, planLimitError } from "../../lib/plans.js";
 
@@ -19,7 +20,7 @@ function withHardTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T
   });
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   try {
     return await run(req);
   } catch (err) {
@@ -28,6 +29,8 @@ export default async function handler(req: Request): Promise<Response> {
     return serverError(`audit/run crashed: ${message}`);
   }
 }
+
+export default safeHandler("api/audit/run", _handler);
 
 async function run(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: { message: "method not allowed" } }, { status: 405 });

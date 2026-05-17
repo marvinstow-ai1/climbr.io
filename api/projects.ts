@@ -6,11 +6,12 @@
 import { serverClient } from "../lib/supabase.js";
 import { CreateProjectInput, badRequest, json } from "../lib/validation.js";
 import { requireAuth } from "../lib/auth.js";
+import { safeHandler } from "../lib/safeHandler.js";
 import { limitsFor, planLimitError } from "../lib/plans.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: Request): Promise<Response> {
+async function _handler(req: Request): Promise<Response> {
   const db = serverClient();
   const ctx = await requireAuth(req, db);
   if (ctx instanceof Response) return ctx;
@@ -88,3 +89,5 @@ export default async function handler(req: Request): Promise<Response> {
 
   return json({ project, keywords: createdKeywords }, { status: 201 });
 }
+
+export default safeHandler("api/projects", _handler);
