@@ -40,6 +40,8 @@ export default function App() {
           <Route path="/passwort-neu" element={<PasswortNeu />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/audit/:id" element={<AuditReport />} />
+          <Route path="/wiki" element={<WikiIndex />} />
+          <Route path="/wiki/:slug" element={<WikiArticle />} />
           <Route path="/legal/impressum" element={<Impressum />} />
           <Route path="/legal/datenschutz" element={<Datenschutz />} />
           <Route path="/legal/agb" element={<AGB />} />
